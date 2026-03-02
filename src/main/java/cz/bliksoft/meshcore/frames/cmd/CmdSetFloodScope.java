@@ -1,0 +1,39 @@
+package cz.bliksoft.meshcore.frames.cmd;
+
+import cz.bliksoft.meshcore.frames.CommandFrame;
+import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
+import cz.bliksoft.meshcore.utils.ByteBuilder;
+
+public class CmdSetFloodScope extends CommandFrame {
+
+	final byte[] scope;
+
+	/**
+	 * 
+	 * @param scope 16B or null
+	 */
+	public CmdSetFloodScope(byte[] scope) {
+		this.scope = scope;
+	}
+
+	@Override
+	public CommandFrameType getFrameType() {
+		return CommandFrameType.CMD_SET_FLOOD_SCOPE;
+	}
+
+	@Override
+	public byte[] getBytes() {
+		ByteBuilder bb = new ByteBuilder();
+		bb.put(getTypeCode());
+		bb.put((byte) 0);
+		if (scope != null)
+			bb.put(scope);
+
+		return bb.toArray();
+	}
+
+	@Override
+	public byte[] expectedResponses() {
+		return EXPECTED_OK;
+	}
+}

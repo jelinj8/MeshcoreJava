@@ -1,0 +1,48 @@
+package cz.bliksoft.meshcore.frames.cmd;
+
+import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
+import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
+import cz.bliksoft.meshcore.frames.group.CommandsWithSentResponse;
+import cz.bliksoft.meshcore.utils.ByteBuilder;
+
+public class CmdSendAnonReq extends CommandsWithSentResponse {
+
+	final byte[] pubkey;
+	final byte[] msgData;
+
+	public CmdSendAnonReq(byte[] pubkey, byte[] msgData) {
+		this.pubkey = pubkey;
+		this.msgData = msgData;
+
+	}
+
+	@Override
+	public CommandFrameType getFrameType() {
+		return CommandFrameType.CMD_SEND_ANON_REQ;
+	}
+
+	@Override
+	public byte[] getBytes() {
+		ByteBuilder bb = new ByteBuilder();
+		bb.put(getTypeCode());
+
+		bb.put(pubkey);
+		bb.put(msgData);
+
+		return bb.toArray();
+	}
+
+	@Override
+	public byte[] expectedResponses() {
+		return EXPECTED_SENT;
+	}
+
+	/**
+	 * can't expect response when sending anonymously? FIXME
+	 */
+	@Override
+	public ResponseFrameType getExpectedResponseFrameType() {
+		return null;
+//		return ResponseFrameType.PUSH_SEND_CONFIRMED;
+	}
+}

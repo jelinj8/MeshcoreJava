@@ -1,0 +1,97 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>cz.bliksoft.meshcore</groupId>
+	<artifactId>meshcore-companion</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.release>8</maven.compiler.release>
+	</properties>
+
+	<distributionManagement>
+		<repository>
+			<id>bliksoft-private</id>
+			<url>https://mvn.bliksoft.cz/private</url>
+		</repository>
+		<snapshotRepository>
+			<id>bliksoft-private-snapshots</id>
+			<url>https://mvn.bliksoft.cz/private-snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
+	<repositories>
+		<repository>
+			<id>bliksoft-private</id>
+			<url>https://mvn.bliksoft.cz/private</url>
+		</repository>
+		<repository>
+			<id>bliksoft-private-snapshots</id>
+			<url>https://mvn.bliksoft.cz/private-snapshots</url>
+		</repository>
+		<repository>
+			<id>bliksoft-thirdparty</id>
+			<url>https://mvn.bliksoft.cz/thirdparty</url>
+		</repository>
+	</repositories>
+
+	<dependencies>
+		<!--
+			https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
+		<!--<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.25.3</version>
+			<scope>provided</scope>
+		</dependency> -->
+
+		<!--
+			https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api -->
+		<!--<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>2.25.3</version>
+			<scope>provided</scope>
+		</dependency>-->
+
+		<!-- https://github.com/Fazecast/jSerialComm -->
+		<dependency>
+			<groupId>com.fazecast</groupId>
+			<artifactId>jSerialComm</artifactId>
+			<version>[2.0.0,3.0.0)</version>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+		<plugins>
+			<!-- compile -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.13.0</version>
+				<configuration>
+					<release>${maven.compiler.release}</release>
+				</configuration>
+			</plugin>
+
+			<!-- make app jar manifest point to Main and include Class-Path:
+			lib/... -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.4.2</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>${main.class}</mainClass>
+							<addClasspath>true</addClasspath>
+							<classpathPrefix>lib/</classpathPrefix>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
