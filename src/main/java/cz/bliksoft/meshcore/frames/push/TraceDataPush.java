@@ -45,16 +45,16 @@ public class TraceDataPush extends ResponseFrame {
 	final int pathLen;
 
 	/**
-	 * Flags bitmask:
-	 * bits [1:0] = path_sz – hash size per hop:
-	 *   0 = 1 byte/hop
-	 *   1 = 2 bytes/hop
-	 *   2 = 4 bytes/hop
-	 * (path_sz introduced in firmware v1.11; older firmware always uses 0)
+	 * Flags bitmask: bits [1:0] = path_sz – hash size per hop: 0 = 1 byte/hop 1 = 2
+	 * bytes/hop 2 = 4 bytes/hop (path_sz introduced in firmware v1.11; older
+	 * firmware always uses 0)
 	 */
 	final int flags;
 
-	/** Tag used to match this push to the originating CMD_SEND_TRACE_PATH / RESP_SENT. */
+	/**
+	 * Tag used to match this push to the originating CMD_SEND_TRACE_PATH /
+	 * RESP_SENT.
+	 */
 	final byte[] tag;
 	/** Auth code sent with the trace packet, used to verify path authenticity. */
 	final byte[] authCode;
@@ -68,9 +68,6 @@ public class TraceDataPush extends ResponseFrame {
 
 	final List<PathRecord> path;
 
-	private final byte[] pathHashes;
-	private final byte[] pathSnr;
-
 	/** Signed int8; SNR to THIS (receiving) node in dB = finalSnr4 / 4.0. */
 	final int finalSnr4;
 
@@ -80,21 +77,23 @@ public class TraceDataPush extends ResponseFrame {
 		br.skip();
 		reserved = br.readByte();
 		pathLen = br.readUnsignedByte();
-		flags = br.readUnsignedByte();
 
-		int path_size = flags & 0x03;
+		flags = br.readUnsignedByte();
+		int pathSize = flags & 0x03;
+		int hashBytes = 1 << pathSize;
+		int hopCount = pathLen >> pathSize;
 
 		tag = br.readBytes(4);
 		authCode = br.readBytes(4);
 
-		pathHashes = br.readBytes(pathLen);
-		pathSnr = br.readBytes(pathLen >> path_size);
+		byte[] pathHashes = br.readBytes(pathLen);
+		byte[] pathSnr = br.readBytes(hopCount);
 
 		path = new ArrayList<>(pathLen);
 		for (int i = 0; i < pathLen; i++) {
 			PathRecord r = new PathRecord();
-			r.hash = new byte[path_size];
-			System.arraycopy(pathHashes, i * path_size, r.hash, 0, path_size);
+			r.hash = new byte[hashBytes];
+			System.arraycopy(pathHashes, i * hashBytes, r.hash, 0, hashBytes);
 			r.snr = pathSnr[i] & 0xFF;
 			path.add(r);
 		}

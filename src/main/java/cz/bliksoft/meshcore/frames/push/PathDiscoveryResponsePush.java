@@ -16,16 +16,24 @@ public class PathDiscoveryResponsePush extends ResponseFrame {
 		return prefix6;
 	}
 
-	public int getOutLen() {
-		return outLen;
+	public int getOutHashLength() {
+		return outHashLength;
+	}
+
+	public int getOutPathLength() {
+		return outPathLength;
 	}
 
 	public byte[] getOutPath() {
 		return outPath;
 	}
 
-	public int getInLen() {
-		return inLen;
+	public int getInHashLength() {
+		return inHashLength;
+	}
+
+	public int getInPathLength() {
+		return inPathLength;
 	}
 
 	public byte[] getInPath() {
@@ -33,20 +41,29 @@ public class PathDiscoveryResponsePush extends ResponseFrame {
 	}
 
 	final byte reserved;
-	/** First 6 bytes of the discovered node's public key; used as response key for matching. */
-	final byte[] prefix6;
-	/** Number of hops in the outbound path (this node → discovered node). */
-	final int outLen;
 	/**
-	 * Concatenated node-hash entries for the outbound path (this node → discovered node).
-	 * Total bytes = outLen × hash_size_per_hop (determined by path_hash_mode).
+	 * First 6 bytes of the discovered node's public key; used as response key for
+	 * matching.
+	 */
+	final byte[] prefix6;
+	/** Bytes per path-hash entry in the outbound path: 1, 2, or 3. */
+	final int outHashLength;
+	/** Number of hops in the outbound path (this node → discovered node). */
+	final int outPathLength;
+	/**
+	 * Concatenated node-hash entries for the outbound path (this node → discovered
+	 * node).
 	 */
 	final byte[] outPath;
-	/** Number of hops in the inbound (return) path (discovered node → this node). */
-	final int inLen;
+	/** Bytes per path-hash entry in the inbound path: 1, 2, or 3. */
+	final int inHashLength;
 	/**
-	 * Concatenated node-hash entries for the inbound (return) path (discovered node → this node).
-	 * Total bytes = inLen × hash_size_per_hop (determined by path_hash_mode).
+	 * Number of hops in the inbound (return) path (discovered node → this node).
+	 */
+	final int inPathLength;
+	/**
+	 * Concatenated node-hash entries for the inbound (return) path (discovered node
+	 * → this node).
 	 */
 	final byte[] inPath;
 
@@ -56,10 +73,14 @@ public class PathDiscoveryResponsePush extends ResponseFrame {
 		br.skip();
 		reserved = br.readByte();
 		prefix6 = br.readBytes(6);
-		outLen = br.readUnsignedByte();
-		outPath = br.readBytes(outLen);
-		inLen = br.readUnsignedByte();
-		inPath = br.readBytes(inLen);
+		int outRaw = br.readUnsignedByte();
+		outHashLength = (outRaw >> 6) + 1;
+		outPathLength = outRaw & 0x3F;
+		outPath = br.readBytes(outPathLength * outHashLength);
+		int inRaw = br.readUnsignedByte();
+		inHashLength = (inRaw >> 6) + 1;
+		inPathLength = inRaw & 0x3F;
+		inPath = br.readBytes(inPathLength * inHashLength);
 	}
 
 	@Override
@@ -71,7 +92,8 @@ public class PathDiscoveryResponsePush extends ResponseFrame {
 	public String toString() {
 		return String.format(
 				"PUSH_PATH_DISCOVERY_RESPONSE reserved=%d prefix6=%s outLen=%d outPath=%s inLen=%d inPath=%s", reserved,
-				MeshcoreUtils.hex(prefix6), outLen, MeshcoreUtils.hex(outPath), inLen, MeshcoreUtils.hex(inPath));
+				MeshcoreUtils.hex(prefix6), outPathLength, MeshcoreUtils.hex(outPath, outHashLength, "-"), inPathLength,
+				MeshcoreUtils.hex(inPath, inHashLength, "-"));
 	}
 
 	@Override

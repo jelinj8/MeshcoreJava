@@ -42,6 +42,15 @@ public class ContactMsgRecv extends MessageFrameGroup {
 		return pathLen != 0xFF;
 	}
 
+	/**
+	 * 255=non-flood
+	 * 
+	 * @return
+	 */
+	public int getPathLen() {
+		return pathLen;
+	}
+
 	public String getText() {
 		return text;
 	}
@@ -51,7 +60,9 @@ public class ContactMsgRecv extends MessageFrameGroup {
 	}
 
 	final ResponseFrameType type;
-	/** Signed int8 from firmware; SNR in dB = snr4 / 4.0. Only valid for V3 frames. */
+	/**
+	 * Signed int8 from firmware; SNR in dB = snr4 / 4.0. Only valid for V3 frames.
+	 */
 	final int snr4;
 	final byte reserved1;
 	final byte reserved2;
@@ -62,15 +73,15 @@ public class ContactMsgRecv extends MessageFrameGroup {
 	/** Unix epoch seconds as reported by the sender. */
 	final long timestamp;
 	/**
-	 * 0xFF (255) = message arrived via a direct (non-flood) route.
-	 * Any other value = hop count of the flood path the message traversed.
+	 * 0xFF (255) = message arrived via a direct (non-flood) route. Any other value
+	 * = hop count of the flood path the message traversed.
 	 */
 	final int pathLen;
 	final String text;
 	/**
-	 * First 4 bytes of the actual sender's public key.
-	 * Only populated for {@link MessageTextType#TXT_TYPE_SIGNED_PLAIN} messages;
-	 * empty (all zeros) for all other types.
+	 * First 4 bytes of the actual sender's public key. Only populated for
+	 * {@link MessageTextType#TXT_TYPE_SIGNED_PLAIN} messages; empty (all zeros) for
+	 * all other types.
 	 */
 	final byte[] senderPrefix;
 

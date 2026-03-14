@@ -7,8 +7,8 @@ import cz.bliksoft.meshcore.utils.ByteReader;
 
 public class DeviceInfo extends ResponseFrame {
 
-	public int getFirmwareVersionCode() {
-		return firmwareVersionCode;
+	public int getProtocolVersion() {
+		return protocolVersion;
 	}
 
 	public int getMaxContacts() {
@@ -39,12 +39,25 @@ public class DeviceInfo extends ResponseFrame {
 		return clientRepeat;
 	}
 
-	/** Path-hash mode (0–2), present from firmware v10+. */
+	/**
+	 * Path-hash mode (0–2), present from firmware v1.14+ (protocol version 10+).
+	 */
 	public int getPathHashMode() {
 		return pathHashMode;
 	}
 
-	final int firmwareVersionCode;
+	/**
+	 * Internal companion-protocol version code sent by the firmware (C++
+	 * {@code FIRMWARE_VER_CODE}). This is NOT the human-readable release string —
+	 * see {@link #firmwareVersion} for that. Known mapping:
+	 * <ul>
+	 * <li>7 → v1.7.2+</li>
+	 * <li>8 → v1.10.0+</li>
+	 * <li>9 → v1.12.0+</li>
+	 * <li>10 → v1.14.0+</li>
+	 * </ul>
+	 */
+	final int protocolVersion;
 	final int maxContacts;
 	final int maxGroupChannels;
 
@@ -64,11 +77,12 @@ public class DeviceInfo extends ResponseFrame {
 		ByteReader br = new ByteReader(data);
 		br.skip();
 
-		// (1) firmware version code
-		firmwareVersionCode = br.readUnsignedByte();
-		if (firmwareVersionCode >= 3) {
-			// (1) firmware sends MAX_CONTACTS / 2; multiply by 2 to get the actual contact limit (v3+)
-			maxContacts = br.readUnsignedByte();
+		// (1) companion protocol version (C++ FIRMWARE_VER_CODE)
+		protocolVersion = br.readUnsignedByte();
+		if (protocolVersion >= 3) {
+			// (1) firmware sends MAX_CONTACTS / 2; multiply by 2 to get the actual contact
+			// limit (v3+)
+			maxContacts = br.readUnsignedByte() * 2;
 			// (1) max group channels (v3+)
 			maxGroupChannels = br.readUnsignedByte();
 		} else {
@@ -90,20 +104,20 @@ public class DeviceInfo extends ResponseFrame {
 		// (20)n firmware version
 		firmwareVersion = br.readFixedCString(20);
 
-		if (firmwareVersionCode >= 9) {
+		if (protocolVersion >= 9) {
 			// (1) client repeat
 			clientRepeat = br.readUnsignedByte() != 0;
 		} else {
 			clientRepeat = false;
 		}
 
-		if (firmwareVersionCode >= 10) {
+		if (protocolVersion >= 10) {
 			pathHashMode = br.readUnsignedByte();
 		} else {
 			pathHashMode = 0;
 		}
 
-		companion.setProtocolVersion(firmwareVersionCode);
+		companion.setProtocolVersion(protocolVersion);
 	}
 
 	@Override
@@ -114,8 +128,8 @@ public class DeviceInfo extends ResponseFrame {
 	@Override
 	public String toString() {
 		return String.format(
-				"RESP_DEVICE_INFO fw:%d maxContacts=%d maxGroupChannels=%d blePIN=%06d fwBuildDate=%s manufacturer=%s fwVersion=%s clientRepeat=%b pathHashMode=%d",
-				firmwareVersionCode, maxContacts, maxGroupChannels, blePIN, firmwareBuildDate, deviceManufacturer,
+				"RESP_DEVICE_INFO protocolVersion=%d maxContacts=%d maxGroupChannels=%d blePIN=%06d fwBuildDate=%s manufacturer=%s fwVersion=%s clientRepeat=%b pathHashMode=%d",
+				protocolVersion, maxContacts, maxGroupChannels, blePIN, firmwareBuildDate, deviceManufacturer,
 				firmwareVersion, clientRepeat, pathHashMode);
 	}
 }

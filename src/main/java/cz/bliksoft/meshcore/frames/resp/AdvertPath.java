@@ -22,11 +22,15 @@ public class AdvertPath extends ResponseFrame {
 
 	/** Unix epoch seconds when this advert was last received by the node. */
 	final long timestamp;
+
 	/** Number of hops in the stored path to this contact. */
 	final int pathLen;
+
+	final int hashSize;
+
 	/**
-	 * Concatenated node-hash entries for the path to this contact.
-	 * Total bytes = pathLen × hash_size_per_hop (determined by path_hash_mode).
+	 * Concatenated node-hash entries for the path to this contact. Total bytes =
+	 * pathLen × hash_size_per_hop (determined by path_hash_mode).
 	 */
 	final byte[] path;
 
@@ -37,6 +41,7 @@ public class AdvertPath extends ResponseFrame {
 		timestamp = br.readUInt32LE();
 		pathLen = br.readUnsignedByte();
 		path = br.readBytes();
+		hashSize = path.length / pathLen;
 	}
 
 	@Override
@@ -47,6 +52,6 @@ public class AdvertPath extends ResponseFrame {
 	@Override
 	public String toString() {
 		return String.format("RESP_ADVERT_PATH %s len=%d %s", MeshcoreUtils.formatMeshcoreTs(timestamp), pathLen,
-				MeshcoreUtils.hex(path));
+				MeshcoreUtils.hex(path, hashSize, "-"));
 	}
 }

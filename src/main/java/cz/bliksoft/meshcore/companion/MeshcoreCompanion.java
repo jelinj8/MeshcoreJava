@@ -24,8 +24,10 @@ import cz.bliksoft.meshcore.frames.cmd.CmdGetContacts;
 import cz.bliksoft.meshcore.frames.cmd.CmdSetChannel;
 import cz.bliksoft.meshcore.frames.cmd.CmdSyncNext;
 import cz.bliksoft.meshcore.frames.group.ContactFrameGroup;
+import cz.bliksoft.meshcore.frames.push.AdvertPush;
 import cz.bliksoft.meshcore.frames.push.ContactDeletedPush;
 import cz.bliksoft.meshcore.frames.push.MessageWaitingPush;
+import cz.bliksoft.meshcore.frames.push.NewAdvertPush;
 import cz.bliksoft.meshcore.frames.push.PathUpdatedPush;
 import cz.bliksoft.meshcore.frames.resp.ChannelInfo;
 import cz.bliksoft.meshcore.frames.resp.Contact;
@@ -308,28 +310,37 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 					expectedCount = ((ContactsStart) frame).getContactsCount();
 				}
 					break;
-				case PUSH_PATH_UPDATED: {
-					byte[] pubkey = ((PathUpdatedPush) frame).getPubkey();
-					if (contacts.containsKey(MeshcoreUtils.hex(pubkey))) {
-						try {
-							ResponseFrame resp = sendFrameWithResult(new CmdGetContactByKey(getBinaryFrame()), 2000l);
-							if (resp instanceof Error) {
-								log.severe(String.format("Contact path update error %s", ((Error) resp).getCode()));
-							}
-							// contact will be handled as RESP_CONTACT
-						} catch (IOException | TimeoutException | InterruptedException e) {
-							log.log(Level.SEVERE, "Contact path update exception", e);
-						}
-					}
-				}
+				case PUSH_PATH_UPDATED:
+					refetchContact(((PathUpdatedPush) frame).getPubkey());
+					break;
+				case PUSH_ADVERT:
+					refetchContact(((AdvertPush) frame).getPubkey());
+					break;
+				case PUSH_NEW_ADVERT:
+					refetchContact(((NewAdvertPush) frame).getPubkey());
+					break;
 				default:
 					break;
 				}
 			}
-
 		};
 
 		registerFrameListener(ContactFrameGroup.class, contactsListener);
+	}
+
+	private void refetchContact(byte[] pubkey) {
+//		if (contacts == null || !contacts.containsKey(MeshcoreUtils.hex(pubkey)))
+//			return;
+		try {
+			ResponseFrame resp = sendFrameWithResult(new CmdGetContactByKey(pubkey), 2000l);
+			if (resp instanceof Error) {
+				log.severe(String.format("Contact refetch error for %s: %s", MeshcoreUtils.hex(pubkey),
+						((Error) resp).getCode()));
+			}
+			// updated RESP_CONTACT is handled by contactsListener above
+		} catch (IOException | TimeoutException | InterruptedException e) {
+			log.log(Level.SEVERE, "Contact refetch exception", e);
+		}
 	}
 
 	public void syncContacts(boolean full) throws IOException {

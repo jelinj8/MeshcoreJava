@@ -68,20 +68,20 @@ public class FrameConstants {
 		CMD_FACTORY_RESET((byte) 51), // 0x33 / 51
 		CMD_SEND_PATH_DISCOVERY_REQ((byte) 52), // 0x34 / 52
 
-		/** v8+ */
+		/** v1.10+ (protocol 8) */
 		CMD_SET_FLOOD_SCOPE((byte) 54), // 0x36 / 54
 
-		/** v8+ */
+		/** v1.10+ (protocol 8) */
 		CMD_SEND_CONTROL_DATA((byte) 55), // 0x37 / 55
 
-		/** v8+, second byte is stats type */
+		/** v1.10+ (protocol 8); second byte is stats sub-type */
 		CMD_GET_STATS((byte) 56), // 0x38 / 56
 
 		CMD_SEND_ANON_REQ((byte) 57), // 0x39 / 57
 		CMD_SET_AUTOADD_CONFIG((byte) 58), // 0x3A / 58
 		CMD_GET_AUTOADD_CONFIG((byte) 59), // 0x3B / 59
 		CMD_GET_ALLOWED_REPEAT_FREQ((byte) 60), // 0x3C / 60
-		CMD_SET_PATH_HASH_MODE((byte)61); // 0x3D / 61
+		CMD_SET_PATH_HASH_MODE((byte) 61); // 0x3D / 61
 
 		private final byte code;
 
@@ -228,7 +228,7 @@ public class FrameConstants {
 		RESP_ADVERT_PATH((byte) 22), // 0x16 / 22
 		RESP_TUNING_PARAMS((byte) 23), // 0x17 / 23
 
-		/** v8+, second byte is stats type */
+		/** v1.10+ (protocol 8); second byte is stats sub-type */
 		RESP_STATS((byte) 24), // 0x18 / 24
 
 		RESP_AUTOADD_CONFIG((byte) 25), // 0x19 / 25
@@ -251,7 +251,7 @@ public class FrameConstants {
 		PUSH_BINARY_RESPONSE((byte) 0x8C), // 0x8C / 140
 		PUSH_PATH_DISCOVERY_RESPONSE((byte) 0x8D), // 0x8D / 141
 
-		/** v8+ */
+		/** v1.10+ (protocol 8) */
 		PUSH_CONTROL_DATA((byte) 0x8E), // 0x8E / 142
 
 		/** used to notify client app of deleted contact when overwriting oldest */
@@ -348,19 +348,45 @@ public class FrameConstants {
 		public byte mask() {
 			return mask;
 		}
+
+		/** Combines one or more flags into a single byte suitable for the wire. */
+		public static byte encode(AutoAddConfigFlags... flags) {
+			byte result = 0;
+			for (AutoAddConfigFlags f : flags) {
+				result |= f.mask;
+			}
+			return result;
+		}
 	}
 
 	/**
-	 * enable telemetry or limit to favorites TODO check!!!
+	 * Telemetry mode flags packed into a single byte by the firmware:
+	 * {@code (env_mode << 4) | (loc_mode << 2) | base_mode}
+	 * <p>
+	 * Each 2-bit field uses the values: 0 = deny, 1 = allow favorites only, 2 =
+	 * allow all. The two bits per channel are exposed as separate mask constants:
+	 * {@code _ALLOW_FAVORITES} = bit 0 of the field (mode == 1), {@code _ALLOW_ALL}
+	 * = bit 1 of the field (mode == 2).
+	 * <p>
+	 * To check whether a channel is enabled at all (mode != 0):
+	 * {@code (byte & (X_ALLOW_FAVORITES.mask() | X_ALLOW_ALL.mask())) != 0}
 	 */
 	public enum TelemetryModeFlags {
 
-		BASE_ENABLED((byte) (1 << 0)), //
-		BASE_FAVORITES_ONLY((byte) (1 << 1)), //
-		LOC_ENABLED((byte) (1 << 2)), //
-		LOC_FAVORITES_ONLY((byte) (1 << 3)), //
-		ENV_ENABLED((byte) (1 << 4)), //
-		ENV_FAVORITES_ONLY((byte) (1 << 5)); //
+		/** bits[1:0] = 01 — base telemetry allowed for favourite contacts only */
+		BASE_ALLOW_FAVORITES((byte) (1 << 0)),
+		/** bits[1:0] = 10 — base telemetry allowed for all contacts */
+		BASE_ALLOW_ALL((byte) (1 << 1)),
+		/** bits[3:2] = 01 — location telemetry allowed for favourite contacts only */
+		LOC_ALLOW_FAVORITES((byte) (1 << 2)),
+		/** bits[3:2] = 10 — location telemetry allowed for all contacts */
+		LOC_ALLOW_ALL((byte) (1 << 3)),
+		/**
+		 * bits[5:4] = 01 — environment telemetry allowed for favourite contacts only
+		 */
+		ENV_ALLOW_FAVORITES((byte) (1 << 4)),
+		/** bits[5:4] = 10 — environment telemetry allowed for all contacts */
+		ENV_ALLOW_ALL((byte) (1 << 5));
 
 		private final byte mask;
 
@@ -370,6 +396,46 @@ public class FrameConstants {
 
 		public byte mask() {
 			return mask;
+		}
+	}
+
+	/**
+	 * Bitmask flags stored in
+	 * {@link cz.bliksoft.meshcore.frames.resp.Contact#getFlags()}.
+	 * <p>
+	 * Bit 0: favourite flag. Bits 1–3: per-contact telemetry permission bits (used
+	 * when the corresponding telemetry mode is {@code TELEM_MODE_ALLOW_FLAGS}). The
+	 * firmware shifts {@code flags >> 1} to get the permission byte, so bit N+1 of
+	 * {@code flags} maps to {@code TELEM_PERM_*} bit N.
+	 */
+	public enum ContactFlags {
+
+		/** bit 0 — contact is marked as favourite */
+		FAVOURITE((byte) 0x01),
+		/** bit 1 — allow base (battery/self) telemetry requests from this contact */
+		TELEM_PERMISSION_BASE((byte) 0x02),
+		/** bit 2 — allow location telemetry requests from this contact */
+		TELEM_PERMISSION_LOCATION((byte) 0x04),
+		/** bit 3 — allow environment telemetry requests from this contact */
+		TELEM_PERMISSION_ENVIRONMENT((byte) 0x08);
+
+		private final byte mask;
+
+		ContactFlags(byte mask) {
+			this.mask = mask;
+		}
+
+		public byte mask() {
+			return mask;
+		}
+
+		/** Combines one or more flags into a single byte suitable for the wire. */
+		public static byte encode(ContactFlags... flags) {
+			byte result = 0;
+			for (ContactFlags f : flags) {
+				result |= f.mask;
+			}
+			return result;
 		}
 	}
 
@@ -431,4 +497,84 @@ public class FrameConstants {
 	// framing for serial comm
 	public static final int SERIAL_FRAME_FROM_RADIO = '>';
 	public static final int SERIAL_FRAME_TO_RADIO = '<';
+
+	// ---- Raw over-the-air packet header decoding (Packet.h) ----
+
+	/** Route type field: bits[1:0] of the OTA packet header byte. */
+	public enum OtaRouteType {
+		TRANSPORT_FLOOD((byte) 0x00),   // flood + transport codes
+		FLOOD((byte) 0x01),             // flood, path built up during relay
+		DIRECT((byte) 0x02),            // direct route, path supplied
+		TRANSPORT_DIRECT((byte) 0x03);  // direct + transport codes
+
+		private final byte code;
+
+		OtaRouteType(byte code) { this.code = code; }
+
+		public byte code() { return code; }
+
+		public boolean isFlood() { return this == FLOOD || this == TRANSPORT_FLOOD; }
+		public boolean isDirect() { return this == DIRECT || this == TRANSPORT_DIRECT; }
+		public boolean hasTransportCodes() { return this == TRANSPORT_FLOOD || this == TRANSPORT_DIRECT; }
+
+		private static final Map<Byte, OtaRouteType> BY_CODE = new HashMap<>();
+		static { for (OtaRouteType v : values()) BY_CODE.put(v.code, v); }
+
+		public static OtaRouteType fromByte(byte value) {
+			OtaRouteType v = BY_CODE.get(value);
+			return v != null ? v : FLOOD;
+		}
+	}
+
+	/**
+	 * Payload type field: bits[5:2] of the OTA packet header byte.
+	 * <p>
+	 * REQ / RESPONSE / TXT_MSG / PATH payload is encrypted; only dest/src 1-byte
+	 * hashes and a 2-byte MAC are visible at the front. ADVERT is signed but
+	 * not encrypted.
+	 */
+	public enum OtaPayloadType {
+		REQ((byte) 0x00),          // encrypted request  (dest_hash, src_hash, MAC, enc_data)
+		RESPONSE((byte) 0x01),     // encrypted response (dest_hash, src_hash, MAC, enc_data)
+		TXT_MSG((byte) 0x02),      // encrypted text     (dest_hash, src_hash, MAC, enc_data)
+		ACK((byte) 0x03),          // simple ack
+		ADVERT((byte) 0x04),       // signed identity broadcast (pub_key, timestamp, signature, app_data)
+		GRP_TXT((byte) 0x05),      // group text  (channel_hash, MAC, enc_data)
+		GRP_DATA((byte) 0x06),     // group datagram (channel_hash, MAC, enc_data)
+		ANON_REQ((byte) 0x07),     // anonymous request (dest_hash, ephemeral_pub_key, MAC, enc_data)
+		PATH((byte) 0x08),         // returned path      (dest_hash, src_hash, MAC, enc_data)
+		TRACE((byte) 0x09),        // path trace, collecting SNR at each hop
+		MULTIPART((byte) 0x0A),    // one part of a multi-packet message
+		CONTROL((byte) 0x0B),      // control / discovery
+		RAW_CUSTOM((byte) 0x0F);   // application-defined, custom encryption
+
+		private final byte code;
+
+		OtaPayloadType(byte code) { this.code = code; }
+
+		public byte code() { return code; }
+
+		private static final Map<Byte, OtaPayloadType> BY_CODE = new HashMap<>();
+		static { for (OtaPayloadType v : values()) BY_CODE.put(v.code, v); }
+
+		public static OtaPayloadType fromByte(byte value) {
+			return BY_CODE.getOrDefault(value, RAW_CUSTOM);
+		}
+	}
+
+	/** Advert app_data flags byte (AdvertDataHelpers.h). */
+	public enum AdvertAppDataFlags {
+		TYPE_MASK((byte) 0x0F),
+		HAS_LATLON((byte) 0x10),
+		HAS_FEAT1((byte) 0x20),
+		HAS_FEAT2((byte) 0x40),
+		HAS_NAME((byte) 0x80);
+
+		private final byte mask;
+
+		AdvertAppDataFlags(byte mask) { this.mask = mask; }
+
+		public byte mask() { return mask; }
+	}
+
 }

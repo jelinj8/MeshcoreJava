@@ -3,6 +3,7 @@ package cz.bliksoft.meshcore.frames.resp;
 import cz.bliksoft.meshcore.Settings;
 import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
 import cz.bliksoft.meshcore.frames.FrameConstants.AdvertType;
+import cz.bliksoft.meshcore.frames.FrameConstants.ContactFlags;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.group.ContactFrameGroup;
 import cz.bliksoft.meshcore.utils.ByteReader;
@@ -18,12 +19,32 @@ public class Contact extends ContactFrameGroup {
 		return type;
 	}
 
-	public byte getFlags() {
-		return flags;
+	/**
+	 * Returns true if the given {@link ContactFlags} bit is set in this contact's
+	 * flags byte.
+	 */
+	public boolean hasFlag(ContactFlags flag) {
+		return (flags & flag.mask()) != 0;
 	}
 
-	public int getOutPathLen() {
-		return outPathLen;
+	/** Bytes per path-hash entry: 1, 2, or 3. */
+	public int getHashLength() {
+		return hashLength;
+	}
+
+	/** Number of hops in the stored outbound path. */
+	public int getPathLength() {
+		return pathLength;
+	}
+
+	/** True when an outbound path is known (false when OUT_PATH_UNKNOWN / 0xFF). */
+	public boolean isPathKnown() {
+		return hashLength <= 3;
+	}
+
+	/** Raw encoded path-length byte, as used in OTA packets and CMD_ADD_UPDATE_CONTACT. */
+	public int getOutPathEncoded() {
+		return ((hashLength - 1) << 6) | pathLength;
 	}
 
 	public byte[] getOutPath() {
@@ -52,19 +73,12 @@ public class Contact extends ContactFrameGroup {
 
 	final byte[] pubkey;
 	final AdvertType type;
-	/**
-	 * Bitmask:
-	 * bit 0 – favourite flag (1 = favourite)
-	 * bits 1–7 – per-contact telemetry permission mask; shifted right by 1 before
-	 *            comparing against TELEM_PERM_* when telemetry mode = ALLOW_FLAGS
-	 */
+	/** Bitmask — see {@link ContactFlags} for individual bit definitions. */
 	final byte flags;
-	/**
-	 * Length of the stored outbound path (hop-hash count).
-	 * 0xFF (255) = OUT_PATH_UNKNOWN → no direct path known, reach via flood.
-	 * 0 = zero-hop / directly reachable.
-	 */
-	final int outPathLen;
+	/** Bytes per path-hash entry: 1-3 normally; 4 means OUT_PATH_UNKNOWN (0xFF). */
+	final int hashLength;
+	/** Number of hops in the stored outbound path. */
+	final int pathLength;
 	final byte[] outPath;
 	final String name;
 	/** Unix epoch seconds of last received advert from this contact. */
@@ -82,7 +96,9 @@ public class Contact extends ContactFrameGroup {
 		pubkey = br.readBytes(Settings.PUBKEY_SIZE);
 		type = AdvertType.fromByte(br.readByte());
 		flags = br.readByte();
-		outPathLen = br.readUnsignedByte();
+		int outPathRaw = br.readUnsignedByte();
+		hashLength = (outPathRaw >> 6) + 1;
+		pathLength = outPathRaw & 0x3F;
 		outPath = br.readBytes(Settings.MAX_PATH_SIZE);
 		name = br.readFixedCString(32);
 		advertTS = br.readUInt32LE();
@@ -98,16 +114,17 @@ public class Contact extends ContactFrameGroup {
 
 	@Override
 	public String toString() {
-		if (outPathLen == 0 || outPathLen == 255) {
+		if (!isPathKnown() || pathLength == 0) {
 			return String.format(
-					"RESP_CONTACT name=%s pubkey32=%s type=%s flags=%d advertTS=%s lat=%f lon=%f lastMod=%s outPathLen=%d",
+					"RESP_CONTACT name=%s pubkey32=%s type=%s flags=%d advertTS=%s lat=%f lon=%f lastMod=%s path=%s",
 					name, MeshcoreUtils.hex(pubkey), type, flags, MeshcoreUtils.formatMeshcoreTs(advertTS), lat, lon,
-					MeshcoreUtils.formatMeshcoreTs(lastMod), outPathLen);
+					MeshcoreUtils.formatMeshcoreTs(lastMod), isPathKnown() ? "direct" : "unknown");
 		} else {
 			return String.format(
-					"RESP_CONTACT name=%s pubkey32=%s type=%s flags=%d advertTS=%s lat=%f lon=%f lastMod=%s outPathLen=%d outPath=%s",
-					name, MeshcoreUtils.hex(pubkey), type, flags, MeshcoreUtils.formatMeshcoreTs(advertTS), lat, lon,
-					MeshcoreUtils.formatMeshcoreTs(lastMod), outPathLen, MeshcoreUtils.hex(outPath, outPathLen));
+					"RESP_CONTACT name=%s pubkey32=%s type=%s favourite=%b flags=%d advertTS=%s lat=%f lon=%f lastMod=%s hops=%d path=%s",
+					name, MeshcoreUtils.hex(pubkey), type, hasFlag(ContactFlags.FAVOURITE), flags,
+					MeshcoreUtils.formatMeshcoreTs(advertTS), lat, lon, MeshcoreUtils.formatMeshcoreTs(lastMod),
+					pathLength, MeshcoreUtils.hex(outPath, hashLength, "-"));
 		}
 	}
 }

@@ -98,6 +98,18 @@ public class MeshcoreUtils {
 		return sb.toString();
 	}
 
+	public static String hex(byte[] b, int groupSize, String separator) {
+		if (b == null || b.length == 0)
+			return "";
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < b.length; i++) {
+			if (i > 0 && i % groupSize == 0)
+				sb.append(separator);
+			sb.append(String.format("%02x", b[i]));
+		}
+		return sb.toString();
+	}
+
 	public static byte[] fixedNullTerm(String s, int len) {
 		byte[] out = new byte[len];
 		if (s == null)

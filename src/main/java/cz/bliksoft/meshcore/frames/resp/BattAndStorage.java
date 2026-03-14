@@ -40,6 +40,6 @@ public class BattAndStorage extends ResponseFrame {
 
 	@Override
 	public String toString() {
-		return String.format("RESP_BATT_AND_STORAGE %dmV, %d/%d B", millivolts, usedStorage, totalStorage);
+		return String.format("RESP_BATT_AND_STORAGE %dmV, %d/%d kB free", millivolts, usedStorage, totalStorage);
 	}
 }

@@ -9,24 +9,24 @@ import cz.bliksoft.meshcore.utils.ByteBuilder;
 public class CmdSetOtherParams extends CommandFrame {
 
 	final boolean manualAddContacts;
-	final boolean telemetryBaseEn;
+	final boolean telemetryBaseAll;
 	final boolean telemetryBaseFav;
-	final boolean telemetryLocEn;
+	final boolean telemetryLocAll;
 	final boolean telemetryLocFav;
-	final boolean telemetryEnvEn;
+	final boolean telemetryEnvAll;
 	final boolean telemetryEnvFav;
 	final AdvertLocPolicy advertLocPolicy;
 	final boolean multiAcks;
 
-	public CmdSetOtherParams(boolean manualAddContacts, boolean telemetryBaseEn, boolean telemetryBaseFav,
-			boolean telemetryLocEn, boolean telemetryLocFav, boolean telemetryEnvEn, boolean telemetryEnvFav,
+	public CmdSetOtherParams(boolean manualAddContacts, boolean telemetryBaseAll, boolean telemetryBaseFav,
+			boolean telemetryLocAll, boolean telemetryLocFav, boolean telemetryEnvAll, boolean telemetryEnvFav,
 			AdvertLocPolicy advertLocPolicy, boolean multiAcks) {
 		this.manualAddContacts = manualAddContacts;
-		this.telemetryBaseEn = telemetryBaseEn;
+		this.telemetryBaseAll = telemetryBaseAll;
 		this.telemetryBaseFav = telemetryBaseFav;
-		this.telemetryEnvEn = telemetryEnvEn;
+		this.telemetryEnvAll = telemetryEnvAll;
 		this.telemetryEnvFav = telemetryEnvFav;
-		this.telemetryLocEn = telemetryLocEn;
+		this.telemetryLocAll = telemetryLocAll;
 		this.telemetryLocFav = telemetryLocFav;
 		this.advertLocPolicy = advertLocPolicy;
 		this.multiAcks = multiAcks;
@@ -43,18 +43,18 @@ public class CmdSetOtherParams extends CommandFrame {
 		bb.put(getTypeCode());
 		bb.put((byte) (manualAddContacts ? 0x01 : 0x00));
 		byte policy = 0;
-		if (telemetryBaseEn)
-			policy |= TelemetryModeFlags.BASE_ENABLED.mask();
+		if (telemetryBaseAll)
+			policy |= TelemetryModeFlags.BASE_ALLOW_ALL.mask();
 		if (telemetryBaseFav)
-			policy |= TelemetryModeFlags.BASE_FAVORITES_ONLY.mask();
-		if (telemetryLocEn)
-			policy |= TelemetryModeFlags.LOC_ENABLED.mask();
+			policy |= TelemetryModeFlags.BASE_ALLOW_FAVORITES.mask();
+		if (telemetryLocAll)
+			policy |= TelemetryModeFlags.LOC_ALLOW_ALL.mask();
 		if (telemetryLocFav)
-			policy |= TelemetryModeFlags.LOC_FAVORITES_ONLY.mask();
-		if (telemetryEnvEn)
-			policy |= TelemetryModeFlags.ENV_ENABLED.mask();
+			policy |= TelemetryModeFlags.LOC_ALLOW_FAVORITES.mask();
+		if (telemetryEnvAll)
+			policy |= TelemetryModeFlags.ENV_ALLOW_ALL.mask();
 		if (telemetryEnvFav)
-			policy |= TelemetryModeFlags.ENV_FAVORITES_ONLY.mask();
+			policy |= TelemetryModeFlags.ENV_ALLOW_FAVORITES.mask();
 		bb.put(policy);
 
 		bb.put(advertLocPolicy.code());
