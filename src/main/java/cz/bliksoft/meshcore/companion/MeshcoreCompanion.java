@@ -1,6 +1,8 @@
 package cz.bliksoft.meshcore.companion;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -408,6 +410,10 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 
 	public ChannelInfo getChannel(int id) {
 		return channels.get(id);
+	}
+
+	public Collection<ChannelInfo> getChannels() {
+		return Collections.unmodifiableCollection(channels.values());
 	}
 
 	public ChannelInfo getChannel(String name) {
