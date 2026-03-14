@@ -41,15 +41,28 @@ public class TraceDataPush extends ResponseFrame {
 	}
 
 	final byte reserved;
+	/** Number of hops in the trace path (= number of path-hash entries). */
 	final int pathLen;
 
+	/**
+	 * Flags bitmask:
+	 * bits [1:0] = path_sz – hash size per hop:
+	 *   0 = 1 byte/hop
+	 *   1 = 2 bytes/hop
+	 *   2 = 4 bytes/hop
+	 * (path_sz introduced in firmware v1.11; older firmware always uses 0)
+	 */
 	final int flags;
 
+	/** Tag used to match this push to the originating CMD_SEND_TRACE_PATH / RESP_SENT. */
 	final byte[] tag;
+	/** Auth code sent with the trace packet, used to verify path authenticity. */
 	final byte[] authCode;
 
 	public class PathRecord {
+		/** Per-hop node hash; length = 1 << path_sz bytes. */
 		byte[] hash;
+		/** Raw unsigned SNR value at this hop (scale: value / 4.0 = dB). */
 		int snr;
 	}
 
@@ -58,6 +71,7 @@ public class TraceDataPush extends ResponseFrame {
 	private final byte[] pathHashes;
 	private final byte[] pathSnr;
 
+	/** Signed int8; SNR to THIS (receiving) node in dB = finalSnr4 / 4.0. */
 	final int finalSnr4;
 
 	public TraceDataPush(MeshcoreCompanion source, byte[] data) {

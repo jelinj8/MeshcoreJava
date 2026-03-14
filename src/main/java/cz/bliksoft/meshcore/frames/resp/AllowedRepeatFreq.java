@@ -1,5 +1,8 @@
 package cz.bliksoft.meshcore.frames.resp;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
 import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
@@ -7,23 +10,23 @@ import cz.bliksoft.meshcore.utils.ByteReader;
 
 public class AllowedRepeatFreq extends ResponseFrame {
 
-	public long getLowerFreq() {
-		return lowerFreq;
+	public List<List<Long>> getRanges() {
+		return ranges;
 	}
 
-	public long getUpperFreq() {
-		return upperFreq;
-	}
-
-	final long lowerFreq;
-	final long upperFreq;
+	final List<List<Long>> ranges;
 
 	public AllowedRepeatFreq(MeshcoreCompanion source, byte[] data) {
 		super(source, data);
 		ByteReader br = new ByteReader(data);
 		br.skip();
-		lowerFreq = br.readUInt32LE();
-		upperFreq = br.readUInt32LE();
+		ranges = new ArrayList<>(3);
+		for (int i = 0; i < 3; i++) {
+			List<Long> range = new ArrayList<>(2);
+			range.add(br.readUInt32LE());
+			range.add(br.readUInt32LE());
+			ranges.add(range);
+		}
 	}
 
 	@Override

@@ -37,8 +37,8 @@ public class CmdSetRadioParams extends CommandFrame {
 	public byte[] getBytes() {
 		ByteBuilder bb = new ByteBuilder();
 		bb.put(getTypeCode());
-		bb.putUInt32LE(freq / 1000);
-		bb.putUInt32LE(bw / 1000);
+		bb.putUInt32LE(freq / 1000); // firmware expects kHz
+		bb.putUInt32LE(bw);          // firmware expects Hz
 		bb.put(sf);
 		bb.put(cr);
 

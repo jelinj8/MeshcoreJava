@@ -21,6 +21,8 @@ public class SignStart extends ResponseFrame {
 	public SignStart(MeshcoreCompanion source, byte[] data) {
 		super(source, data);
 		ByteReader br = new ByteReader(data);
+		br.skip();
+		
 		reserved = br.readByte();
 		maxDataLength = br.readUInt32LE();
 	}

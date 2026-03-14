@@ -52,14 +52,27 @@ public class Contact extends ContactFrameGroup {
 
 	final byte[] pubkey;
 	final AdvertType type;
+	/**
+	 * Bitmask:
+	 * bit 0 – favourite flag (1 = favourite)
+	 * bits 1–7 – per-contact telemetry permission mask; shifted right by 1 before
+	 *            comparing against TELEM_PERM_* when telemetry mode = ALLOW_FLAGS
+	 */
 	final byte flags;
+	/**
+	 * Length of the stored outbound path (hop-hash count).
+	 * 0xFF (255) = OUT_PATH_UNKNOWN → no direct path known, reach via flood.
+	 * 0 = zero-hop / directly reachable.
+	 */
 	final int outPathLen;
 	final byte[] outPath;
 	final String name;
+	/** Unix epoch seconds of last received advert from this contact. */
 	final long advertTS;
 
 	final Double lat;
 	final Double lon;
+	/** Unix epoch seconds of last modification; used for incremental sync. */
 	final long lastMod;
 
 	public Contact(MeshcoreCompanion source, byte[] data) {

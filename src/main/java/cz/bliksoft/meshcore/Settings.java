@@ -17,4 +17,6 @@ public class Settings {
 	public static final int MAX_PATH_SIZE = 64;
 
 	public static final int MAX_FRAME_SIZE = 172;
+	
+	public static final int IMPLEMENTED_PROTOCOL_VERSION = 14;
 }

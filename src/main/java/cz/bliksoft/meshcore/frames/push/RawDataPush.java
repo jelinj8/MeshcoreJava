@@ -8,8 +8,11 @@ import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 public class RawDataPush extends ResponseFrame {
 
+	/** Signed int8; SNR of the received packet in dB = lastSnr4 / 4.0. */
 	final int lastSnr4;
+	/** Signed int8; RSSI of the received packet in dBm. */
 	final int lastRssi;
+	/** Always 0xFF — reserved by firmware ("possibly path_len in future"). */
 	final byte reserved;
 	final byte[] rawData;
 

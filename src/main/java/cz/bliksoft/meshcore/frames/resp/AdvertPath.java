@@ -20,8 +20,14 @@ public class AdvertPath extends ResponseFrame {
 		return path;
 	}
 
+	/** Unix epoch seconds when this advert was last received by the node. */
 	final long timestamp;
+	/** Number of hops in the stored path to this contact. */
 	final int pathLen;
+	/**
+	 * Concatenated node-hash entries for the path to this contact.
+	 * Total bytes = pathLen × hash_size_per_hop (determined by path_hash_mode).
+	 */
 	final byte[] path;
 
 	public AdvertPath(MeshcoreCompanion source, byte[] data) {

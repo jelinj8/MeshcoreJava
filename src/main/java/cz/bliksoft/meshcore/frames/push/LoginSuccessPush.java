@@ -8,10 +8,22 @@ import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 public class LoginSuccessPush extends ResponseFrame {
 
+	/**
+	 * Server-reported permission flags:
+	 * bit 0 – is_admin (1 = admin access granted)
+	 * Other bits are server-defined.
+	 */
 	final int permissions;
+	/** First 6 bytes of the server's public key; used as response key for matching. */
 	final byte[] prefix6;
+	/** Unix epoch timestamp reflected from the login request (v7+). */
 	final long timestamp;
+	/**
+	 * ACL permission bits reported by the server (v7+).
+	 * Interpretation is server-specific.
+	 */
 	final int acl;
+	/** Firmware version level reported by the server (FIRMWARE_VER_LEVEL); 6 for pre-v7 servers. */
 	final int fwVersionLevel;
 
 	public LoginSuccessPush(MeshcoreCompanion source, byte[] data) {

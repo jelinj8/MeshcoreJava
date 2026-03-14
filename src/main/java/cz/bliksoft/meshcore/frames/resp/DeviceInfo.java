@@ -39,6 +39,11 @@ public class DeviceInfo extends ResponseFrame {
 		return clientRepeat;
 	}
 
+	/** Path-hash mode (0–2), present from firmware v10+. */
+	public int getPathHashMode() {
+		return pathHashMode;
+	}
+
 	final int firmwareVersionCode;
 	final int maxContacts;
 	final int maxGroupChannels;
@@ -52,6 +57,7 @@ public class DeviceInfo extends ResponseFrame {
 	final String deviceManufacturer;
 	final String firmwareVersion;
 	final boolean clientRepeat;
+	final int pathHashMode;
 
 	public DeviceInfo(MeshcoreCompanion source, byte[] data) {
 		super(source, data);
@@ -61,7 +67,7 @@ public class DeviceInfo extends ResponseFrame {
 		// (1) firmware version code
 		firmwareVersionCode = br.readUnsignedByte();
 		if (firmwareVersionCode >= 3) {
-			// (1) max contacts/2 (v3+)
+			// (1) firmware sends MAX_CONTACTS / 2; multiply by 2 to get the actual contact limit (v3+)
 			maxContacts = br.readUnsignedByte();
 			// (1) max group channels (v3+)
 			maxGroupChannels = br.readUnsignedByte();
@@ -91,6 +97,12 @@ public class DeviceInfo extends ResponseFrame {
 			clientRepeat = false;
 		}
 
+		if (firmwareVersionCode >= 10) {
+			pathHashMode = br.readUnsignedByte();
+		} else {
+			pathHashMode = 0;
+		}
+
 		companion.setProtocolVersion(firmwareVersionCode);
 	}
 
@@ -102,8 +114,8 @@ public class DeviceInfo extends ResponseFrame {
 	@Override
 	public String toString() {
 		return String.format(
-				"RESP_DEVICE_INFO fw:%d maxContacts=%d maxGroupChannels=%d blePIN=%06d fwBuildDate=%s manufacturer=%s fwVersion=%s clientRepeat=%b",
+				"RESP_DEVICE_INFO fw:%d maxContacts=%d maxGroupChannels=%d blePIN=%06d fwBuildDate=%s manufacturer=%s fwVersion=%s clientRepeat=%b pathHashMode=%d",
 				firmwareVersionCode, maxContacts, maxGroupChannels, blePIN, firmwareBuildDate, deviceManufacturer,
-				firmwareVersion, clientRepeat);
+				firmwareVersion, clientRepeat, pathHashMode);
 	}
 }

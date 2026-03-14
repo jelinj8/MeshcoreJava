@@ -214,7 +214,7 @@ public class MeshcoreUtils {
 	public static byte[] hashChannelKey(String channelName) {
 		byte[] sha;
 		try {
-			sha = MessageDigest.getInstance("SHA-256").digest("#test".getBytes(StandardCharsets.UTF_8));
+			sha = MessageDigest.getInstance("SHA-256").digest(channelName.getBytes(StandardCharsets.UTF_8));
 			return Arrays.copyOf(sha, 16);
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();

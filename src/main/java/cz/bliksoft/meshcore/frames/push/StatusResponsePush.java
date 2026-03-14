@@ -21,7 +21,9 @@ public class StatusResponsePush extends ResponseFrame {
 	}
 
 	final byte reserved;
+	/** First 6 bytes of the responding node's public key; used as response key for matching. */
 	final byte[] prefix6;
+	/** Raw status payload returned by the remote node in response to CMD_SEND_STATUS_REQ. */
 	final byte[] rawData;
 
 	public StatusResponsePush(MeshcoreCompanion source, byte[] data) {
@@ -40,7 +42,7 @@ public class StatusResponsePush extends ResponseFrame {
 
 	@Override
 	public String toString() {
-		return String.format("PUSH_STATUS_RESPONSE reserved=%d prefix6=%s dfata=%s", reserved,
+		return String.format("PUSH_STATUS_RESPONSE reserved=%d prefix6=%s data=%s", reserved,
 				MeshcoreUtils.hex(prefix6), MeshcoreUtils.hex(rawData));
 	}
 

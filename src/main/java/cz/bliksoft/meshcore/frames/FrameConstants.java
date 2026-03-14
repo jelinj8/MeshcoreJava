@@ -80,7 +80,8 @@ public class FrameConstants {
 		CMD_SEND_ANON_REQ((byte) 57), // 0x39 / 57
 		CMD_SET_AUTOADD_CONFIG((byte) 58), // 0x3A / 58
 		CMD_GET_AUTOADD_CONFIG((byte) 59), // 0x3B / 59
-		CMD_GET_ALLOWED_REPEAT_FREQ((byte) 60); // 0x3C / 60
+		CMD_GET_ALLOWED_REPEAT_FREQ((byte) 60), // 0x3C / 60
+		CMD_SET_PATH_HASH_MODE((byte)61); // 0x3D / 61
 
 		private final byte code;
 

@@ -1,5 +1,6 @@
 package cz.bliksoft.meshcore.frames.cmd;
 
+import cz.bliksoft.meshcore.Settings;
 import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
@@ -10,7 +11,7 @@ public class CmdDeviceQuery extends CommandFrame {
 	public byte[] getBytes() {
 		// type
 		// supported protocol version
-		return new byte[] { getFrameType().code(), 13 };
+		return new byte[] { getFrameType().code(), Settings.IMPLEMENTED_PROTOCOL_VERSION };
 	}
 
 	@Override

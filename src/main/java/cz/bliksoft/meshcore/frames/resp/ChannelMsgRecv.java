@@ -51,13 +51,20 @@ public class ChannelMsgRecv extends MessageFrameGroup {
 	}
 
 	final ResponseFrameType type;
+	/** Signed int8 from firmware; SNR in dB = snr4 / 4.0. Only valid for V3 frames. */
 	final int snr4;
 	final byte reserved1;
 	final byte reserved2;
 
+	/** Index into the device's channel table (0-based). */
 	final int channelIdx;
 	final MessageTextType textType;
+	/** Unix epoch seconds as reported by the sender. */
 	final long timestamp;
+	/**
+	 * 0xFF (255) = message arrived via a direct (non-flood) route.
+	 * Any other value = hop count of the flood path the message traversed.
+	 */
 	final int pathLen;
 	final String text;
 
@@ -66,7 +73,7 @@ public class ChannelMsgRecv extends MessageFrameGroup {
 		ByteReader br = new ByteReader(data);
 		type = ResponseFrameType.fromByte(br.readByte());
 		if (type == ResponseFrameType.RESP_CHANNEL_MSG_RECV_V3) {
-			snr4 = br.readUnsignedByte();
+			snr4 = br.readByte(); // signed int8_t from firmware
 			reserved1 = br.readByte();
 			reserved2 = br.readByte();
 		} else {

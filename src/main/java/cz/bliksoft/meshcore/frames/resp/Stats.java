@@ -111,16 +111,16 @@ public class Stats extends ResponseFrame {
 			battmV = br.readUInt16LE();
 			uptimeS = br.readUInt32LE();
 			errflags = br.readInt16LE();
-			queueLen = br.readUInt16LE();
+			queueLen = br.readUnsignedByte();
 			break;
-		case PACKETS:
+		case RADIO:
 			noiseFloor = br.readInt16LE();
 			lastRssi = br.readByte();
 			lastSnr4 = br.readByte();
 			txAirSec = br.readUInt32LE();
 			rxAirSec = br.readUInt32LE();
 			break;
-		case RADIO:
+		case PACKETS:
 			recv = br.readUInt32LE();
 			sent = br.readUInt32LE();
 			sentFlood = br.readUInt32LE();

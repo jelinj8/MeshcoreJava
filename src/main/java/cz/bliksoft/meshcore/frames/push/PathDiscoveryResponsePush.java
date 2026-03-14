@@ -33,10 +33,21 @@ public class PathDiscoveryResponsePush extends ResponseFrame {
 	}
 
 	final byte reserved;
+	/** First 6 bytes of the discovered node's public key; used as response key for matching. */
 	final byte[] prefix6;
+	/** Number of hops in the outbound path (this node → discovered node). */
 	final int outLen;
+	/**
+	 * Concatenated node-hash entries for the outbound path (this node → discovered node).
+	 * Total bytes = outLen × hash_size_per_hop (determined by path_hash_mode).
+	 */
 	final byte[] outPath;
+	/** Number of hops in the inbound (return) path (discovered node → this node). */
 	final int inLen;
+	/**
+	 * Concatenated node-hash entries for the inbound (return) path (discovered node → this node).
+	 * Total bytes = inLen × hash_size_per_hop (determined by path_hash_mode).
+	 */
 	final byte[] inPath;
 
 	public PathDiscoveryResponsePush(MeshcoreCompanion source, byte[] data) {

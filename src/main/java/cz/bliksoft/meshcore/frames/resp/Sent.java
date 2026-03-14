@@ -20,8 +20,15 @@ public class Sent extends ResponseFrame {
 		return expectedTimeout;
 	}
 
+	/** true = packet was sent as a flood, false = sent direct. */
 	final boolean flood;
+	/**
+	 * 4-byte ACK hash (for plain messages) or request tag (for login/binary reqs).
+	 * Matches {@link SendConfirmedPush#getTag()} when the recipient ACKs the message.
+	 * All zeros when no ACK is expected (e.g. CLI data).
+	 */
 	final byte[] tag;
+	/** Estimated timeout in ms after which no ACK/response should be expected. */
 	final long expectedTimeout;
 
 	public Sent(MeshcoreCompanion source, byte[] data) {

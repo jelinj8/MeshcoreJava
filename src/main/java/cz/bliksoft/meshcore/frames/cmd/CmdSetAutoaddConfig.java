@@ -7,14 +7,28 @@ import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 public class CmdSetAutoaddConfig extends CommandFrame {
 
 	final byte autoaddCfg;
+	/** -1 = omit (firmware keeps existing value), 0–64 = set. */
+	final int maxHops;
 
 	/**
-	 * set contacts autoadd config
-	 * 
-	 * @param config use {@link AutoAddConfigFlags}
+	 * Set contacts auto-add config without changing maxHops.
+	 *
+	 * @param config bitmask, see {@link AutoAddConfigFlags}
 	 */
 	public CmdSetAutoaddConfig(byte config) {
 		this.autoaddCfg = config;
+		this.maxHops = 0;
+	}
+
+	/**
+	 * Set contacts auto-add config and maxHops.
+	 *
+	 * @param config  bitmask, see {@link AutoAddConfigFlags}
+	 * @param maxHops maximum hop count for auto-add (0–64)
+	 */
+	public CmdSetAutoaddConfig(byte config, int maxHops) {
+		this.autoaddCfg = config;
+		this.maxHops = maxHops;
 	}
 
 	@Override
@@ -24,6 +38,8 @@ public class CmdSetAutoaddConfig extends CommandFrame {
 
 	@Override
 	public byte[] getBytes() {
+		if (maxHops >= 0)
+			return new byte[] { getTypeCode(), autoaddCfg, (byte) Math.min(maxHops, 64) };
 		return new byte[] { getTypeCode(), autoaddCfg };
 	}
 

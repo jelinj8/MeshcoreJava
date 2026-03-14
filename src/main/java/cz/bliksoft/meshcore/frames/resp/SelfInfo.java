@@ -150,6 +150,8 @@ public class SelfInfo extends ResponseFrame {
 		advertLocPolicy = (companion.getProtocolVersion() >= 7) ? AdvertLocPolicy.fromByte(advertLocPolicyByte)
 				: AdvertLocPolicy.ADVERT_LOC_NONE;
 
+		// telemetryMode byte layout (v5+): bits [7:4]=env_mode, bits [3:2]=loc_mode, bits [1:0]=base_mode
+		// Each 2-bit field: 0=disabled, 1=allow_favorites_only, 2=allow_all
 		byte telemetryMode = br.readByte();
 		if (companion.getProtocolVersion() >= 5) {
 			telemetryModeEnvEn = (telemetryMode & TelemetryModeFlags.ENV_ENABLED.mask()) != 0;
@@ -166,8 +168,8 @@ public class SelfInfo extends ResponseFrame {
 
 		manualAddContacts = (br.readByte() & 0x01) == 1;
 
-		freq = br.readUInt32LE() * 1000;
-		bw = br.readUInt32LE() * 1000;
+		freq = br.readUInt32LE() * 1000; // firmware sends kHz → store as Hz
+		bw = br.readUInt32LE();           // firmware sends Hz → store as Hz
 		sf = br.readUnsignedByte();
 		cr = br.readUnsignedByte();
 

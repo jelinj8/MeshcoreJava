@@ -24,8 +24,11 @@ public class ControlDataPush extends ResponseFrame {
 		return payload;
 	}
 
+	/** Signed int8; SNR of the received packet in dB = lastSnr4 / 4.0. */
 	final int lastSnr4;
+	/** Signed int8; RSSI of the received packet in dBm. */
 	final int lastRssi;
+	/** Hop count of the packet's path (0 = sent zero-hop / local broadcast). */
 	final int pathLen;
 	final byte[] payload;
 
@@ -35,7 +38,7 @@ public class ControlDataPush extends ResponseFrame {
 		br.skip();
 		this.lastSnr4 = br.readSignedByte();
 		this.lastRssi = br.readSignedByte();
-		this.pathLen = br.readUInt16LE();
+		this.pathLen = br.readUnsignedByte();
 		this.payload = br.readBytes();
 	}
 

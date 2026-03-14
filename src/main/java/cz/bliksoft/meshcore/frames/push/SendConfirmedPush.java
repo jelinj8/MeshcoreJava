@@ -8,6 +8,10 @@ import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 public class SendConfirmedPush extends ResponseFrame {
 
+	/**
+	 * 4-byte ACK hash; matches {@link cz.bliksoft.meshcore.frames.resp.Sent#getAckIdOrTag()}
+	 * of the original send to identify which message was confirmed.
+	 */
 	final byte[] tag;
 
 	public byte[] getTag() {
@@ -18,6 +22,7 @@ public class SendConfirmedPush extends ResponseFrame {
 		return tripTime;
 	}
 
+	/** Round-trip time in ms from when the message was sent to when this ACK arrived. */
 	final long tripTime;
 
 	public SendConfirmedPush(MeshcoreCompanion source, byte[] data) {

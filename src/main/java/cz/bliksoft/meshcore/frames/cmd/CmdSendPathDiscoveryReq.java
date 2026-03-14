@@ -22,7 +22,8 @@ public class CmdSendPathDiscoveryReq extends CommandsWithSentResponse {
 	public byte[] getBytes() {
 		ByteBuilder bb = new ByteBuilder();
 		bb.put(getTypeCode());
-
+		bb.put((byte) 0x00);
+		
 		bb.put(pubkey);
 
 		return bb.toArray();
