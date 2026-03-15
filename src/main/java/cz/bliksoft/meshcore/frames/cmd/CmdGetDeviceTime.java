@@ -9,7 +9,7 @@ public class CmdGetDeviceTime extends CommandFrame {
 
 	@Override
 	public CommandFrameType getFrameType() {
-		return CommandFrameType.CMD_SET_DEVICE_TIME;
+		return CommandFrameType.CMD_GET_DEVICE_TIME;
 	}
 
 	@Override
