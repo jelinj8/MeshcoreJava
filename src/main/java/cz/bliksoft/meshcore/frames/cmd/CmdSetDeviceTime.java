@@ -12,7 +12,8 @@ public class CmdSetDeviceTime extends CommandFrame {
 
 	/**
 	 * 
-	 * @param timestamp default now
+	 * @param timestamp default now, ILLEGAL_ARG if sooner than device's current
+	 *                  time
 	 */
 	public CmdSetDeviceTime(Long timestamp) {
 		this.timestamp = timestamp == null ? Instant.now().getEpochSecond() : timestamp;
