@@ -14,6 +14,7 @@ public class Settings {
 	public static final long RECENT_ACK_TTL_MS = 30_000L;
 
 	public static final int PUBKEY_SIZE = 32;
+	public static final int SIGNATURE_SIZE = 64;
 	public static final int MAX_PATH_SIZE = 64;
 
 	public static final int MAX_FRAME_SIZE = 172;

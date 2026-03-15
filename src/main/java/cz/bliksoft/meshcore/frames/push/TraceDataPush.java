@@ -62,8 +62,8 @@ public class TraceDataPush extends ResponseFrame {
 	public class PathRecord {
 		/** Per-hop node hash; length = 1 << path_sz bytes. */
 		byte[] hash;
-		/** Raw unsigned SNR value at this hop (scale: value / 4.0 = dB). */
-		int snr;
+		/** Signed SNR4 value at this hop (int8_t); dB = snr4 / 4.0. */
+		int snr4;
 	}
 
 	final List<PathRecord> path;
@@ -89,12 +89,12 @@ public class TraceDataPush extends ResponseFrame {
 		byte[] pathHashes = br.readBytes(pathLen);
 		byte[] pathSnr = br.readBytes(hopCount);
 
-		path = new ArrayList<>(pathLen);
-		for (int i = 0; i < pathLen; i++) {
+		path = new ArrayList<>(hopCount);
+		for (int i = 0; i < hopCount; i++) {
 			PathRecord r = new PathRecord();
 			r.hash = new byte[hashBytes];
 			System.arraycopy(pathHashes, i * hashBytes, r.hash, 0, hashBytes);
-			r.snr = pathSnr[i] & 0xFF;
+			r.snr4 = pathSnr[i]; // signed int8_t
 			path.add(r);
 		}
 
@@ -108,7 +108,8 @@ public class TraceDataPush extends ResponseFrame {
 
 	@Override
 	public String toString() {
-		String pathString = path.stream().map(r -> String.format("%s (%d)", MeshcoreUtils.hex(r.hash), r.snr))
+		String pathString = path.stream()
+				.map(r -> String.format("%s(snr:%.2f)", MeshcoreUtils.hex(r.hash), r.snr4 / 4.0))
 				.collect(Collectors.joining("->"));
 
 		return String.format("PUSH_TRACE_DATA reserved=%d pathLen=%d flags=%d tag=%s authCode=%s path=%s finalSnr=%.2f",

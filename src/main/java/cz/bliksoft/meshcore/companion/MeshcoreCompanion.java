@@ -1,9 +1,11 @@
 package cz.bliksoft.meshcore.companion;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -17,6 +19,7 @@ import cz.bliksoft.meshcore.FrameListenerRegistry;
 import cz.bliksoft.meshcore.Settings;
 import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.Frame;
+import cz.bliksoft.meshcore.frames.FrameConstants;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.cmd.CmdGetBattAndStorage;
@@ -372,6 +375,23 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 				return c;
 		}
 		return null;
+	}
+
+	/**
+	 * list all contacts with given prefix, optionally limited to type
+	 * 
+	 * @param pubkey
+	 * @return
+	 */
+	public List<Contact> getContacts(byte[] pubkey, FrameConstants.AdvertType type) {
+		if (pubkey == null || pubkey.length == 0)
+			return null;
+		List<Contact> result = new ArrayList<>();
+		for (Contact c : contacts.values()) {
+			if (MeshcoreUtils.isPrefix(pubkey, c.getPubkey()) && (type == null || c.getType() == type))
+				result.add(c);
+		}
+		return result;
 	}
 
 	private Map<Integer, ChannelInfo> channels = new HashMap<>();

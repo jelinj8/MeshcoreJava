@@ -6,8 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
-import cz.bliksoft.meshcore.frames.FrameConstants.OtaPayloadType;
-import cz.bliksoft.meshcore.frames.FrameConstants.OtaRouteType;
+import cz.bliksoft.meshcore.frames.OtaConstants;
 import cz.bliksoft.meshcore.frames.push.LogRXDataPush;
 import cz.bliksoft.meshcore.frames.resp.ChannelInfo;
 
@@ -173,9 +172,9 @@ public class GroupTextDecryptor {
 			return null;
 		int i = 0;
 		int header = raw[i++] & 0xFF;
-		OtaRouteType route = OtaRouteType.fromByte((byte) (header & 0x03));
-		OtaPayloadType type = OtaPayloadType.fromByte((byte) ((header >> 2) & 0x0F));
-		if (type != OtaPayloadType.GRP_TXT)
+		OtaConstants.OtaRouteType route = OtaConstants.OtaRouteType.fromByte((byte) (header & 0x03));
+		OtaConstants.OtaPayloadType type = OtaConstants.OtaPayloadType.fromByte((byte) ((header >> 2) & 0x0F));
+		if (type != OtaConstants.OtaPayloadType.GRP_TXT)
 			return null;
 
 		if (route.hasTransportCodes())
