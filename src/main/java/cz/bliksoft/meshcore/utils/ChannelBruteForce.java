@@ -1,9 +1,5 @@
 package cz.bliksoft.meshcore.utils;
 
-import javax.crypto.Cipher;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -12,6 +8,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+
+import javax.crypto.Cipher;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Brute-force discovery of MeshCore group channel names from captured GRP_TXT
@@ -64,18 +64,11 @@ public class ChannelBruteForce {
 		for (char c = '0'; c <= '9'; c++)
 			sb.append(c);
 		sb.append('-');
-		sb.append('@');
-		sb.append(':');
-		sb.append('_');
+//		sb.append('@');
+//		sb.append(':');
+//		sb.append('_');
 		CHARSET = sb.toString().toCharArray();
 	}
-
-	/**
-	 * Valid Unix epoch range used to accept decrypted timestamps (2020-01-01 ..
-	 * 2035-01-01).
-	 */
-	private static final long TS_MIN = 1_577_836_800L;
-	private static final long TS_MAX = 2_051_222_400L;
 
 	// ThreadLocal pools so we don't allocate Cipher/MessageDigest/Mac per
 	// candidate.
@@ -224,7 +217,7 @@ public class ChannelBruteForce {
 			// Step 5: validate timestamp (uint32LE in bytes [0..3])
 			long ts = (plain[0] & 0xFFL) | ((plain[1] & 0xFFL) << 8) | ((plain[2] & 0xFFL) << 16)
 					| ((plain[3] & 0xFFL) << 24);
-			if (ts < TS_MIN || ts > TS_MAX)
+			if (ts < MeshCoreCrypto.TS_MIN || ts > MeshCoreCrypto.TS_MAX)
 				return;
 
 			// Step 6: byte 4 is TXT_TYPE (0 = plain); must be 0 for valid GRP_TXT
@@ -320,7 +313,7 @@ public class ChannelBruteForce {
 
 			long ts = (plain[0] & 0xFFL) | ((plain[1] & 0xFFL) << 8) | ((plain[2] & 0xFFL) << 16)
 					| ((plain[3] & 0xFFL) << 24);
-			if (ts < TS_MIN || ts > TS_MAX)
+			if (ts < MeshCoreCrypto.TS_MIN || ts > MeshCoreCrypto.TS_MAX)
 				return false;
 
 			if (plain[4] != 0)

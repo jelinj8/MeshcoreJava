@@ -1,7 +1,7 @@
 This is an implemetation of Meshcore Companion serial interface (https://github.com/meshcore-dev/MeshCore/tree/main/examples/companion_radio). It allows full control of the companion (all communication frame types are implemented) currently via USB.
 Firmware compatibility v1.14 (including multibyte routing).
 
-Current version is written completely by me (reverse-engeneering of the C++ firmware source) with some sanity-checking by AI.
+Current version is written by me (reverse-engeneering of the C++ firmware source) with some help from AI (mainly sanity checking, decryption and cleanup).
 
 Everything should be compatible with JDK1.8. It contradicts the "think embedded" suggestion at Meshcore's GitHub as it is a higher level language and the main idea is to keep it maintainable and in sync with the firmware (that is why there is the Frame type hierarchy).
 
@@ -10,7 +10,20 @@ That should enable this to be used even in Android apps (to finally make an open
 
 BLE implementation requires just implementing a connection class as the frame protocol is common, but it requires finding a Java library to do that and I didn't have an opportunity and motivation for that yet. (See SerialMeshcoreCompanion for what is needed).
 
-All communication is logged (Log4J2, DEBUG to cz.bliksoft.meshcore.companion.MeshcoreCompanion.DEV).
+All communication is logged (Log4J2 to cz.bliksoft.meshcore.companion.MeshcoreCompanion.DEV FINE).
+
+More detailed logging of air frames can be enabled by setting
+
+```java
+// default, just read RSSI, SNR, routing and message types.
+LogRXDataPush.isDecodeRaw(true);
+
+// parse also transmitted frames content - that provides also routing hops and deciphering of Group and Unicast text frames where possible (using configured channels for Groups and own key for unicast messages where the recipient is the companion).
+LogRXDataPush.isDecodePaylodad(true);
+
+// detailed logging of path hops with contacts identified by prefixes, with multiple values where not unique.
+LogRXDataPush.setTranslatePath(true);
+```
 
 This is a simple usage example:
 
@@ -88,6 +101,7 @@ public class SimpleMeshcoreCompanion extends SerialMeshcoreCompanion {
 ```
 
 A BruteForceDecryptor can be registered as a listener to discover and decrypt hash channels:
+
 ```java
 		GroupTextDecryptor decryptor = new GroupTextDecryptor(1, 6);
 
@@ -106,6 +120,7 @@ A BruteForceDecryptor can be registered as a listener to discover and decrypt ha
 			}
 		});
 ```
+
 Maximum reasonable length to decrypt is 7 characters (~2 minutes on a 24C CPU).
 
 Contacts and channels are synchronized on connect and then kept synchronized. All communication with the Companion triggers "events" that can have registered "listeners" (by frame class or superclass like MessageFrameGroup or ContactFrameGroup).

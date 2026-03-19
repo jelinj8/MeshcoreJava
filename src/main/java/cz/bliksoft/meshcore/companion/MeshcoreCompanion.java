@@ -22,6 +22,7 @@ import cz.bliksoft.meshcore.frames.Frame;
 import cz.bliksoft.meshcore.frames.FrameConstants;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.ResponseFrame;
+import cz.bliksoft.meshcore.frames.cmd.CmdExportPrivateKey;
 import cz.bliksoft.meshcore.frames.cmd.CmdGetBattAndStorage;
 import cz.bliksoft.meshcore.frames.cmd.CmdGetChannel;
 import cz.bliksoft.meshcore.frames.cmd.CmdGetContactByKey;
@@ -40,6 +41,7 @@ import cz.bliksoft.meshcore.frames.resp.ContactsStart;
 import cz.bliksoft.meshcore.frames.resp.EndOfContacts;
 import cz.bliksoft.meshcore.frames.resp.Error;
 import cz.bliksoft.meshcore.frames.resp.Ok;
+import cz.bliksoft.meshcore.frames.resp.PrivateKey;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
@@ -71,6 +73,7 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	protected void deviceInit() throws IOException {
 		try {
 			sendFrameWithResult(new CmdGetBattAndStorage(), 10000);
+			fetchPrivateKey();
 			syncChannels();
 		} catch (TimeoutException | InterruptedException e) {
 			throw new IOException(e);
@@ -449,6 +452,31 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 		return result;
 	}
 
+	private byte[] cachedPrivateKey;
+
+	/**
+	 * Fetch the node's 64-byte Ed25519 private key from the device and cache it.
+	 * Subsequent calls return the cached value without sending another command.
+	 *
+	 * @return 64-byte private key, or {@code null} if the device did not respond
+	 *         with a valid key
+	 */
+	public byte[] fetchPrivateKey() throws IOException, TimeoutException, InterruptedException {
+		if (cachedPrivateKey != null)
+			return cachedPrivateKey;
+		ResponseFrame resp = sendFrameWithResult(new CmdExportPrivateKey(), 2000);
+		if (resp instanceof PrivateKey)
+			cachedPrivateKey = ((PrivateKey) resp).getPrivateKey();
+		return cachedPrivateKey;
+	}
+
+	/**
+	 * Return the cached private key without contacting the device, or {@code null}.
+	 */
+	public byte[] getPrivateKey() {
+		return cachedPrivateKey;
+	}
+
 	private Map<Integer, ChannelInfo> channels = new HashMap<>();
 
 	public void syncChannels() throws IOException, TimeoutException, InterruptedException {
@@ -500,4 +528,5 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 		}
 		return null;
 	}
+
 }

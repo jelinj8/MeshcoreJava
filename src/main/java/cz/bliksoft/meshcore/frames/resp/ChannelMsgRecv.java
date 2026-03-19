@@ -110,4 +110,5 @@ public class ChannelMsgRecv extends MessageFrameGroup {
 				channelIdx, channelName, MeshcoreUtils.formatMeshcoreTs(timestamp), snr4 / 4.0, pathLen, isFlood(),
 				text);
 	}
+
 }

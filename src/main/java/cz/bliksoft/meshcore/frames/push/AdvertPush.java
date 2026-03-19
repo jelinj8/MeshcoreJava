@@ -4,7 +4,6 @@ import cz.bliksoft.meshcore.Settings;
 import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.group.ContactFrameGroup;
-import cz.bliksoft.meshcore.frames.resp.Contact;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 

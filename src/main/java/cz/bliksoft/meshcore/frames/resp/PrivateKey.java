@@ -1,10 +1,9 @@
 package cz.bliksoft.meshcore.frames.resp;
 
 import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
-import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
+import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.utils.ByteReader;
-import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 public class PrivateKey extends ResponseFrame {
 
@@ -29,6 +28,6 @@ public class PrivateKey extends ResponseFrame {
 
 	@Override
 	public String toString() {
-		return String.format("RESP_PRIVATE_KEY %s", MeshcoreUtils.hex(privateKey));
+		return String.format("RESP_PRIVATE_KEY %s", "***************");
 	}
 }

@@ -18,9 +18,11 @@ import cz.bliksoft.meshcore.frames.Frame;
 import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.cmd.CmdAppStart;
 import cz.bliksoft.meshcore.frames.cmd.CmdDeviceQuery;
+import cz.bliksoft.meshcore.frames.resp.DeviceInfo;
+import cz.bliksoft.meshcore.frames.resp.SelfInfo;
 
 /**
- * MeshCore Companion USB client.
+ * MeshCore Companion client.
  *
  * Design goals: - Single reader thread owns reading/parsing of frames. -
  * Handlers are dispatched to eventExecutor so they never block reading. -
@@ -104,6 +106,14 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 		this.name = name;
 	}
 
+	public DeviceInfo getDeviceInfo() {
+		return deviceInfo;
+	}
+
+	public SelfInfo getSelfInfo() {
+		return selfInfo;
+	}
+
 	/**
 	 * set by deviceInit according to returned device info
 	 */
@@ -125,6 +135,9 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	private volatile CompletableFuture<ResponseFrame> pendingFuture;
 	private volatile byte[] pendingAcceptCodes;
 
+	private DeviceInfo deviceInfo = null;
+	private SelfInfo selfInfo = null;
+
 	// ----------------- Core concurrency: send + await response -----------------
 
 	/**
@@ -135,7 +148,8 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	 */
 	public void sendFrame(Frame payload) throws IOException {
 		requestLock.lock();
-		frameLog.fine(payload.toString());
+		if (frameLog.isLoggable(Level.FINE))
+			frameLog.fine(payload.toString());
 		try {
 			sendBinaryFrame(payload.getBytes());
 		} finally {
@@ -173,7 +187,8 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 			throws IOException, TimeoutException, InterruptedException {
 		checkBlockingThread();
 		requestLock.lock();
-		frameLog.fine(payload.toString());
+		if (frameLog.isLoggable(Level.FINE))
+			frameLog.fine(payload.toString());
 		try {
 			CompletableFuture<ResponseFrame> f = new CompletableFuture<>();
 			pendingFuture = f;
@@ -276,9 +291,8 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	 * @throws TimeoutException
 	 */
 	protected void deviceHandshake() throws IOException, TimeoutException, InterruptedException {
-		// handshake (best effort)
-		sendFrameWithResult(new CmdDeviceQuery(), 1000);
-		sendFrameWithResult(new CmdAppStart("BSMeshcore"), 1000);
+		deviceInfo = (DeviceInfo) sendFrameWithResult(new CmdDeviceQuery(), 1000);
+		selfInfo = (SelfInfo) sendFrameWithResult(new CmdAppStart("BSMeshcore"), 1000);
 	}
 
 	/**
