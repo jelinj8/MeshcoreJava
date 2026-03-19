@@ -4,6 +4,7 @@ import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.group.ContactFrameGroup;
 import cz.bliksoft.meshcore.utils.ByteReader;
+import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 public class ContactDeletedPush extends ContactFrameGroup {
 
@@ -25,4 +26,8 @@ public class ContactDeletedPush extends ContactFrameGroup {
 		return ResponseFrameType.PUSH_CONTACT_DELETED;
 	}
 
+	@Override
+	public String toString() {
+		return String.format("CONTACT_DELETED_PUSH pubkey=%s", MeshcoreUtils.hex(pubkey));
+	}
 }
