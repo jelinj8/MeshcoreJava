@@ -104,7 +104,7 @@ public class Contact extends ContactFrameGroup {
 	/** Unix epoch seconds of last modification; used for incremental sync. */
 	final long lastMod;
 
-	final boolean saved;
+	public boolean saved;
 
 	public Contact(MeshcoreCompanion source, byte[] data) {
 		super(source, data);

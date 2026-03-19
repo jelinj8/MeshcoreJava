@@ -37,8 +37,11 @@ public class AdvertPush extends ContactFrameGroup {
 
 	@Override
 	public String toString() {
-		Contact c = companion.getContact(pubkey);
-		return String.format("PUSH_ADVERT pubkey=%s [%s]", MeshcoreUtils.hex(pubkey),
-				c != null ? c.getName() : "?");
+		return String.format("PUSH_ADVERT pubkey=%s", MeshcoreUtils.hex(pubkey));
+
+//		// might not be saved, getting the contact causes ConcurrentModification exception.
+//		Contact c = companion.getContact(pubkey);
+//		return String.format("PUSH_ADVERT pubkey=%s [%s]", MeshcoreUtils.hex(pubkey),
+//				c != null ? c.getName() : "?");
 	}
 }

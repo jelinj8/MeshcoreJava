@@ -390,7 +390,7 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 			try {
 				frameLog.fine(frame.toString());
 			} catch (Exception e) {
-				frameLog.severe(String.format("Failed to log frame %s", frame.getFrameType()));
+				frameLog.log(Level.SEVERE, String.format("Failed to log frame %s", frame.getFrameType()), e);
 			}
 		}
 

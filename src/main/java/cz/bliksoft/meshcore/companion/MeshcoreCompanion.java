@@ -275,6 +275,18 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	}
 
 	private Map<String, Contact> contacts = null;
+	private Map<String, Contact> contactsArchive = new HashMap<>();
+
+	/**
+	 * get list of unsaved contacts. Either removed from companion or PushAdvertNew
+	 * unsaved.
+	 * 
+	 * @return
+	 */
+	public Map<String, Contact> getContactsArchive() {
+		return contactsArchive;
+	}
+
 	Long lastContactsSync = null;
 	boolean contactsSyncInstalled = false;
 
@@ -291,12 +303,17 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 				switch (frame.getFrameType()) {
 				case RESP_CONTACT: {
 					Contact c = (Contact) frame;
-					contacts.put(MeshcoreUtils.hex(c.getPubkey()), c);
+					String pubkey = MeshcoreUtils.hex(c.getPubkey());
+					contacts.put(pubkey, c);
+					contactsArchive.remove(pubkey);
 				}
 					break;
 				case PUSH_CONTACT_DELETED: {
 					ContactDeletedPush d = (ContactDeletedPush) frame;
-					contacts.remove(MeshcoreUtils.hex(d.getPubkey()));
+					String pubkey = MeshcoreUtils.hex(d.getPubkey());
+					Contact c = contacts.remove(pubkey);
+					c.saved = false;
+					contactsArchive.put(pubkey, c);
 				}
 					break;
 				case PUSH_CONTACTS_FULL:
@@ -323,7 +340,7 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 					break;
 				case PUSH_NEW_ADVERT:
 					// Add contact to local DB without adding it to companion's storage
-					contacts.put(MeshcoreUtils.hex(((NewAdvertPush) frame).getPubkey()),
+					contactsArchive.put(MeshcoreUtils.hex(((NewAdvertPush) frame).getPubkey()),
 							new Contact(MeshcoreCompanion.this, frame.getBytes().clone()));
 					break;
 				default:
@@ -359,6 +376,12 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 		sendFrame(new CmdGetContacts(lastContactsSync));
 	}
 
+	/**
+	 * Find a saved contact by name (exact match).
+	 * 
+	 * @param name
+	 * @return
+	 */
 	public Contact getContact(String name) {
 		if (name == null || name.length() == 0)
 			return null;
@@ -369,27 +392,57 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 		return null;
 	}
 
+	/**
+	 * return an unique contact from known contacts, null if not unique or not found
+	 * 
+	 * @param pubkey
+	 * @return
+	 */
 	public Contact getContact(byte[] pubkey) {
 		if (pubkey == null || pubkey.length == 0)
 			return null;
+		Contact first = null;
 		for (Contact c : contacts.values()) {
-			if (MeshcoreUtils.isPrefix(pubkey, c.getPubkey()))
-				return c;
+			if (MeshcoreUtils.isPrefix(pubkey, c.getPubkey())) {
+				if (first == null) {
+					first = c;
+				} else {
+					return null;
+				}
+			}
+			if (first != null)
+				return first;
+		}
+		for (Contact c : contactsArchive.values()) {
+			if (MeshcoreUtils.isPrefix(pubkey, c.getPubkey())) {
+				if (first == null) {
+					first = c;
+				} else {
+					return null;
+				}
+			}
+			if (first != null)
+				return first;
 		}
 		return null;
 	}
 
 	/**
-	 * list all contacts with given prefix, optionally limited to type
+	 * list all contacts with given prefix, optionally limited to type. Try archive
+	 * if no saved contacts are found.
 	 * 
 	 * @param pubkey
 	 * @return
 	 */
-	public List<Contact> getContacts(byte[] pubkey, FrameConstants.AdvertType type) {
+	public List<Contact> findContacts(byte[] pubkey, FrameConstants.AdvertType type) {
 		if (pubkey == null || pubkey.length == 0)
 			return null;
 		List<Contact> result = new ArrayList<>();
 		for (Contact c : contacts.values()) {
+			if (MeshcoreUtils.isPrefix(pubkey, c.getPubkey()) && (type == null || c.getType() == type))
+				result.add(c);
+		}
+		for (Contact c : contactsArchive.values()) {
 			if (MeshcoreUtils.isPrefix(pubkey, c.getPubkey()) && (type == null || c.getType() == type))
 				result.add(c);
 		}
