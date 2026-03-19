@@ -110,6 +110,6 @@ Maximum reasonable length to decrypt is 7 characters (~2 minutes on a 24C CPU).
 
 Contacts and channels are synchronized on connect and then kept synchronized. All communication with the Companion triggers "events" that can have registered "listeners" (by frame class or superclass like MessageFrameGroup or ContactFrameGroup).
 
-AdvertNew event is a bit problematic (causes error as the contact is not auto-added when set to manual adding, but there is made an attempt to read it after the advert). That will be fixed eventually.
+NewAdvertPush event adds the contact only in local memory, so it can be later/in a listener added to Companion's storage (.getCmdAddUpdateContact() and send the resulting frame to companion) or just used to identify a node in air traffic.
 
 Suggestions are welcome, more examples might come.

@@ -23,6 +23,7 @@ public class CmdAddUpdateContact extends CommandFrame {
 
 	public CmdAddUpdateContact(byte[] pubkey, AdvertType type, byte flags, int outPathLen, byte[] outPath, String name,
 			long advertTS, Double lat, Double lon, Long lastMod) {
+		this.rawBytes = null;
 		this.pubkey = pubkey;
 		this.type = type;
 		this.flags = flags;
@@ -41,6 +42,7 @@ public class CmdAddUpdateContact extends CommandFrame {
 	 */
 	public CmdAddUpdateContact(byte[] pubkey, AdvertType type, int outPathLen, byte[] outPath, String name,
 			long advertTS, Double lat, Double lon, Long lastMod, ContactFlags... contactFlags) {
+		this.rawBytes = null;
 		this.pubkey = pubkey;
 		this.type = type;
 		this.flags = ContactFlags.encode(contactFlags);
@@ -53,6 +55,21 @@ public class CmdAddUpdateContact extends CommandFrame {
 		this.lastMod = lastMod;
 	}
 
+	private final byte[] rawBytes; // null when built from fields
+
+	public CmdAddUpdateContact(byte[] rawBytes) {
+		this.rawBytes = java.util.Arrays.copyOf(rawBytes, rawBytes.length);
+		this.rawBytes[0] = CommandFrameType.CMD_ADD_UPDATE_CONTACT.code();
+		// null-init required finals
+		this.pubkey = null;
+		this.type = null;
+		this.flags = 0;
+		this.outPathLen = 0;
+		this.outPath = null;
+		this.name = null;
+		this.advertTS = 0;
+	}
+
 	@Override
 	public CommandFrameType getFrameType() {
 		return CommandFrameType.CMD_ADD_UPDATE_CONTACT;
@@ -60,6 +77,9 @@ public class CmdAddUpdateContact extends CommandFrame {
 
 	@Override
 	public byte[] getBytes() {
+		if (rawBytes != null)
+			return rawBytes;
+
 		ByteBuilder bb = new ByteBuilder();
 		bb.put(getTypeCode());
 		bb.put(pubkey);

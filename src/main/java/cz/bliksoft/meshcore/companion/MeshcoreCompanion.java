@@ -322,7 +322,9 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 					refetchContact(((AdvertPush) frame).getPubkey());
 					break;
 				case PUSH_NEW_ADVERT:
-					refetchContact(((NewAdvertPush) frame).getPubkey());
+					// Add contact to local DB without adding it to companion's storage
+					contacts.put(MeshcoreUtils.hex(((NewAdvertPush) frame).getPubkey()),
+							new Contact(MeshcoreCompanion.this, frame.getBytes().clone()));
 					break;
 				default:
 					break;

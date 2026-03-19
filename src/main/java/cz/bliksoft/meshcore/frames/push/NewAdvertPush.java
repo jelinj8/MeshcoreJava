@@ -5,6 +5,7 @@ import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
 import cz.bliksoft.meshcore.frames.FrameConstants.AdvertType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ContactFlags;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
+import cz.bliksoft.meshcore.frames.cmd.CmdAddUpdateContact;
 import cz.bliksoft.meshcore.frames.group.ContactFrameGroup;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
@@ -61,7 +62,10 @@ public class NewAdvertPush extends ContactFrameGroup {
 		return hashLength <= 3;
 	}
 
-	/** Raw encoded path-length byte, as used in OTA packets and CMD_ADD_UPDATE_CONTACT. */
+	/**
+	 * Raw encoded path-length byte, as used in OTA packets and
+	 * CMD_ADD_UPDATE_CONTACT.
+	 */
 	public int getOutPathEncoded() {
 		return ((hashLength - 1) << 6) | pathLength;
 	}
@@ -118,8 +122,11 @@ public class NewAdvertPush extends ContactFrameGroup {
 		return String.format(
 				"PUSH_NEW_ADVERT name=%s pubkey=%s type=%s favourite=%b advertTS=%s lat=%.5f lon=%.5f lastMod=%s hops=%d path=%s",
 				name, MeshcoreUtils.hex(pubkey), type, hasFlag(ContactFlags.FAVOURITE),
-				MeshcoreUtils.formatMeshcoreTs(advertTS), lat, lon,
-				MeshcoreUtils.formatMeshcoreTs(lastMod), pathLength,
+				MeshcoreUtils.formatMeshcoreTs(advertTS), lat, lon, MeshcoreUtils.formatMeshcoreTs(lastMod), pathLength,
 				isPathKnown() && pathLength > 0 ? MeshcoreUtils.hex(outPath, hashLength, "-") : "unknown");
+	}
+
+	public CmdAddUpdateContact getCmdAddUpdateContact() {
+		return new CmdAddUpdateContact(getBytes());
 	}
 }

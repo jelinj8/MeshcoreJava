@@ -2,9 +2,11 @@ package cz.bliksoft.meshcore.frames.resp;
 
 import cz.bliksoft.meshcore.Settings;
 import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
+import cz.bliksoft.meshcore.frames.FrameConstants;
 import cz.bliksoft.meshcore.frames.FrameConstants.AdvertType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ContactFlags;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
+import cz.bliksoft.meshcore.frames.cmd.CmdAddUpdateContact;
 import cz.bliksoft.meshcore.frames.group.ContactFrameGroup;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
@@ -42,7 +44,10 @@ public class Contact extends ContactFrameGroup {
 		return hashLength <= 3;
 	}
 
-	/** Raw encoded path-length byte, as used in OTA packets and CMD_ADD_UPDATE_CONTACT. */
+	/**
+	 * Raw encoded path-length byte, as used in OTA packets and
+	 * CMD_ADD_UPDATE_CONTACT.
+	 */
 	public int getOutPathEncoded() {
 		return ((hashLength - 1) << 6) | pathLength;
 	}
@@ -71,6 +76,16 @@ public class Contact extends ContactFrameGroup {
 		return lastMod;
 	}
 
+	/**
+	 * indicates added contact. false for new_advert (not added contact), then it
+	 * can be used to add the adverted contact.
+	 * 
+	 * @return
+	 */
+	public boolean isSaved() {
+		return saved;
+	}
+
 	final byte[] pubkey;
 	final AdvertType type;
 	/** Bitmask — see {@link ContactFlags} for individual bit definitions. */
@@ -89,10 +104,22 @@ public class Contact extends ContactFrameGroup {
 	/** Unix epoch seconds of last modification; used for incremental sync. */
 	final long lastMod;
 
+	final boolean saved;
+
 	public Contact(MeshcoreCompanion source, byte[] data) {
 		super(source, data);
 		ByteReader br = new ByteReader(data);
-		br.skip();
+
+		Byte fType = br.readByte();
+
+		if (fType == FrameConstants.ResponseFrameType.PUSH_NEW_ADVERT.code()) {
+			// convert frame to a contact for saving (identical structure, different type).
+			saved = false;
+			data[0] = FrameConstants.ResponseFrameType.RESP_CONTACT.code();
+		} else {
+			saved = true;
+		}
+
 		pubkey = br.readBytes(Settings.PUBKEY_SIZE);
 		type = AdvertType.fromByte(br.readByte());
 		flags = br.readByte();
@@ -127,4 +154,9 @@ public class Contact extends ContactFrameGroup {
 					pathLength, MeshcoreUtils.hex(outPath, hashLength, "-"));
 		}
 	}
+
+	public CmdAddUpdateContact getCmdAddUpdateContact() {
+		return new CmdAddUpdateContact(getBytes());
+	}
+
 }
