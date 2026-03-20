@@ -238,9 +238,9 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	 */
 	public void drainMessages() {
 		try {
-			ResponseFrame resp = sendFrameWithResult(new CmdSyncNext(), 500l);
+			ResponseFrame resp = sendFrameWithResult(new CmdSyncNext(), 1000l);
 			while (!resp.is(ResponseFrameType.RESP_ERR) && !resp.is(ResponseFrameType.RESP_NO_MORE_MESSAGES)) {
-				resp = sendFrameWithResult(new CmdSyncNext(), 500l);
+				resp = sendFrameWithResult(new CmdSyncNext(), 1000l);
 			}
 		} catch (IOException | TimeoutException | InterruptedException e) {
 			log.log(Level.SEVERE, "draining messages", e);

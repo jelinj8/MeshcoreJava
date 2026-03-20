@@ -128,12 +128,23 @@ public abstract class OtaFrame {
 	protected String routingPrefix() {
 		String tcStr = tc0 >= 0 ? String.format(" tc=%04x/%04x", tc0, tc1) : "";
 		if (LogRXDataPush.isTranslatePath()) {
-			return String.format("route=%s type=%s ver=%d%s %s", route, payloadType, ver, tcStr,
-					(path.length > 0 ? "\n" : "path=") + getDetailedPath());
+			return String.format("route=%s type=%s ver=%d%s hops=%d %s", route, payloadType, ver, tcStr,
+					path.length / hashSize, (path.length > 0 ? "\n" : "path=") + getDetailedPath());
 		} else {
 			String pathStr = path.length > 0 ? MeshcoreUtils.hex(path, hashSize, "-") : "direct";
-			return String.format("route=%s type=%s ver=%d%s path=%s", route, payloadType, ver, tcStr, pathStr);
+			return String.format("route=%s type=%s ver=%d%s hops=%d path=%s", route, payloadType, ver, tcStr,
+					path.length / hashSize, pathStr);
 		}
+	}
+
+	/** Returns true if the packet arrived with no intermediate hops (path is empty). */
+	public boolean isDirect() {
+		return path.length == 0;
+	}
+
+	/** Returns the number of intermediate hops recorded in the path (0 = direct). */
+	public int getHopCount() {
+		return path.length / hashSize;
 	}
 
 	public String getDetailedPath() {

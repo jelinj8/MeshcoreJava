@@ -84,14 +84,14 @@ public class Stats extends ResponseFrame {
 	int errflags = 0;
 	int queueLen = -1;
 
-	// packets
+	// radio
 	int noiseFloor = 0;
 	int lastRssi = 0;
 	int lastSnr4 = 0;
 	long txAirSec = -1;
 	long rxAirSec = -1;
 
-	// radio
+	// packets
 	long recv = -1;
 	long sent = -1;
 	long sentFlood = -1;
@@ -143,12 +143,12 @@ public class Stats extends ResponseFrame {
 		case CORE:
 			return String.format("RESP_STATS CORE batt %dmV uptime(s)=%d errFlags=%d queueLen=%d", battmV, uptimeS,
 					errflags, queueLen);
-		case PACKETS:
-			return String.format("RESP_STATS PACKETS noiseFloor=%d lastRssi=%d lastSnr=%.2f txAir(s)=%d rxAir(s)=%d",
-					noiseFloor, lastRssi, lastSnr4 / 4.0, txAirSec, rxAirSec);
 		case RADIO:
+			return String.format("RESP_STATS RADIO noiseFloor=%d lastRssi=%d lastSnr=%.2f txAir(s)=%d rxAir(s)=%d",
+					noiseFloor, lastRssi, lastSnr4 / 4.0, txAirSec, rxAirSec);
+		case PACKETS:
 			return String.format(
-					"RESP_STATS RADIO recv=%d sent=%d sentFlood=%d sentDirect=%d recvFlood=%d recvDirect=%d recvErrors=%d",
+					"RESP_STATS PACKETS recv=%d sent=%d sentFlood=%d sentDirect=%d recvFlood=%d recvDirect=%d recvErrors=%d",
 					recv, sent, sentFlood, sentDirect, recvFlood, recvDirect, recvErrors);
 		}
 		return "RESP_STATS unknown subtype";

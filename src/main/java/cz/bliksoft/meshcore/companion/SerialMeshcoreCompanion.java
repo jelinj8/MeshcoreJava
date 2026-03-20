@@ -146,7 +146,7 @@ public class SerialMeshcoreCompanion extends MeshcoreCompanion {
 	 */
 	@Override
 	protected synchronized void sendBinaryFrame(byte[] payload) throws IOException {
-		log.fine(String.format("send payload: %s", MeshcoreUtils.hex(payload)));
+//		log.fine(String.format("send payload: %s", MeshcoreUtils.hex(payload)));
 		checkConnection();
 		OutputStream o = out;
 		if (o == null)
