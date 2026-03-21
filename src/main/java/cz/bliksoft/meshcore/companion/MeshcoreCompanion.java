@@ -45,9 +45,11 @@ import cz.bliksoft.meshcore.frames.push.SendConfirmedPush;
 import cz.bliksoft.meshcore.frames.push.StatusResponsePush;
 import cz.bliksoft.meshcore.frames.push.TelemetryResponsePush;
 import cz.bliksoft.meshcore.frames.push.TraceDataPush;
+import cz.bliksoft.meshcore.frames.resp.Contact;
 import cz.bliksoft.meshcore.frames.resp.Sent;
 import cz.bliksoft.meshcore.frames.resp.Signature;
 import cz.bliksoft.meshcore.frames.resp.SignStart;
+import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 
@@ -345,6 +347,38 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 		if (resp instanceof Error)
 			throw new CompanionErrorException(resp.toString());
 		return (Sent) resp;
+	}
+
+	/**
+	 * Send a direct text message with up to 3 attempts. The first two attempts use
+	 * whatever routing the device has cached (direct if a path is known, flood
+	 * otherwise). If both time out, the contact's cached path is reset so the third
+	 * and final attempt is forced to use flood routing.
+	 *
+	 * @param txtType   message text type
+	 * @param prefix6   6-byte public key prefix identifying the recipient
+	 * @param timestamp Unix epoch seconds, or {@code null} to use the current time
+	 * @param text      message text
+	 * @return {@link SendConfirmedPush} delivery confirmation
+	 * @throws IOException
+	 * @throws TimeoutException     if all 3 attempts time out
+	 * @throws InterruptedException
+	 */
+	public SendConfirmedPush sendTxtMsgWithRetry(MessageTextType txtType, byte[] prefix6, Long timestamp, String text)
+			throws IOException, TimeoutException, InterruptedException {
+		for (int attempt = 0; attempt < 2; attempt++) {
+			try {
+				return sendTxtMsg(txtType, prefix6, attempt, timestamp, text);
+			} catch (TimeoutException e) {
+				log.warning(String.format("sendTxtMsg attempt %d timed out for %s", attempt,
+						MeshcoreUtils.hexPrefix6(prefix6)));
+			}
+		}
+		// Final attempt: reset path to force flood routing
+		Contact contact = config.getContact(prefix6);
+		if (contact != null)
+			config.resetPath(contact.getPubkey());
+		return sendTxtMsg(txtType, prefix6, 2, timestamp, text);
 	}
 
 	/**

@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
@@ -433,9 +434,12 @@ public class MeshcoreCompanionConfig {
 	/**
 	 * Fetch the node's 64-byte Ed25519 private key from the device and cache it.
 	 *
-	 * @return 64-byte private key, or {@code null} if the device did not respond
-	 *         with a valid key
-	 * @throws UnsupportedOperationException when disabled in device firmware
+	 * @return 64-byte private key
+	 * @throws UnsupportedOperationException when private key export is disabled in
+	 *                                       device firmware
+	 * @throws IOException
+	 * @throws TimeoutException
+	 * @throws InterruptedException
 	 */
 	public byte[] getPrivateKey() {
 		if (privateKey != null) {
@@ -461,13 +465,15 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 * import a new private key to the device.
-	 * 
-	 * @param key
+	 * Import a new 64-byte Ed25519 private key to the device. The device reloads
+	 * its identity and contacts live — no reboot required.
+	 *
+	 * @param key 64-byte Ed25519 private key
+	 * @throws UnsupportedOperationException when private key import is disabled in
+	 *                                       device firmware
 	 * @throws IOException
 	 * @throws TimeoutException
 	 * @throws InterruptedException
-	 * @throws UnsupportedOperationException when disabled in device firmware
 	 */
 	public void importPrivateKey(byte[] key) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdImportPrivateKey(key), defaultGetTimeout);
@@ -774,5 +780,370 @@ public class MeshcoreCompanionConfig {
 		if (resp instanceof Error)
 			throw new CompanionErrorException(resp.toString());
 		return (AdvertPath) resp;
+	}
+
+	// -------------------- Backup / Restore --------------------
+
+	private static final String DEFAULT_DEVICE_PREFIX = "device";
+
+	/**
+	 * Backup full device configuration (excluding channels and contacts) into a
+	 * {@link Properties} object. Keys use the {@code device.*} namespace.
+	 *
+	 * @param props target properties (written to, not cleared first)
+	 * @throws IOException
+	 * @throws TimeoutException
+	 * @throws InterruptedException
+	 */
+	public void deviceBackup(Properties props) throws IOException, TimeoutException, InterruptedException {
+		deviceBackup(props, DEFAULT_DEVICE_PREFIX);
+	}
+
+	/**
+	 * Backup full device configuration (excluding channels and contacts) into a
+	 * {@link Properties} object. Keys use the {@code <prefix>.*} namespace.
+	 *
+	 * @param props  target properties (written to, not cleared first)
+	 * @param prefix key prefix (e.g. {@code "device"} produces keys like
+	 *               {@code device.name})
+	 * @throws IOException
+	 * @throws TimeoutException
+	 * @throws InterruptedException
+	 */
+	public void deviceBackup(Properties props, String prefix)
+			throws IOException, TimeoutException, InterruptedException {
+		SelfInfo si = getSelfInfo();
+		DeviceInfo di = getDeviceInfo();
+		AutoaddConfig ac = getAutoaddConfig();
+		TuningParams tp = getTuningParams();
+		CustomVars cv = getCustomVars();
+
+		final String p = prefix + ".";
+
+		// node identity
+		props.setProperty(p + "name", si.getNodeName());
+
+		// radio params
+		props.setProperty(p + "freq", Long.toString(si.getFreq()));
+		props.setProperty(p + "bw", Long.toString(si.getBw()));
+		props.setProperty(p + "sf", Integer.toString(si.getSf()));
+		props.setProperty(p + "cr", Integer.toString(si.getCr()));
+		props.setProperty(p + "clientRepeat", Boolean.toString(di.isClientRepeat()));
+		props.setProperty(p + "txPower", Integer.toString(si.getTxPowerDbm()));
+
+		// routing / path
+		props.setProperty(p + "pathHashMode", Integer.toString(di.getPathHashMode()));
+
+		// advert / location
+		props.setProperty(p + "advertLocPolicy", si.getAdvertLocPolicy().name());
+		props.setProperty(p + "lat", Double.toString(si.getLat()));
+		props.setProperty(p + "lon", Double.toString(si.getLon()));
+
+		// contact / message behaviour
+		props.setProperty(p + "manualAddContacts", Boolean.toString(si.isManualAddContacts()));
+		props.setProperty(p + "multiAcks", Boolean.toString(si.getMultiAcks()));
+
+		// telemetry modes
+		props.setProperty(p + "telemetryBaseEn", Boolean.toString(si.isTelemetryModeBaseEn()));
+		props.setProperty(p + "telemetryBaseFav", Boolean.toString(si.isTelemetryModeBaseFav()));
+		props.setProperty(p + "telemetryLocEn", Boolean.toString(si.isTelemetryModeLocEn()));
+		props.setProperty(p + "telemetryLocFav", Boolean.toString(si.isTelemetryModeLocFav()));
+		props.setProperty(p + "telemetryEnvEn", Boolean.toString(si.isTelemetryModeEnvEn()));
+		props.setProperty(p + "telemetryEnvFav", Boolean.toString(si.isTelemetryModeEnvFav()));
+
+		// autoadd
+		props.setProperty(p + "autoaddConfig", Byte.toString(ac.getAutoaddConfig()));
+		props.setProperty(p + "autoaddMaxHops", Integer.toString(ac.getAutoAddMaxHops()));
+
+		// tuning
+		props.setProperty(p + "rxDelayBase", Double.toString(tp.getRxDelayBase()));
+		props.setProperty(p + "airtimeFactor", Double.toString(tp.getAirtimeFactor()));
+
+		// PIN (1_000_000 = no PIN in firmware)
+		props.setProperty(p + "pin", Long.toString(di.getBlePIN()));
+
+		// private key (skipped silently when export is disabled on device)
+		try {
+			props.setProperty(p + "privateKey", MeshcoreUtils.hex(getPrivateKey()));
+		} catch (UnsupportedOperationException e) {
+			log.warning("Private key export is disabled on device — skipping backup of private key");
+		}
+
+		// custom vars
+		Map<String, String> vars = cv.getVariables();
+		props.setProperty(p + "customVars.count", Integer.toString(vars.size()));
+		int idx = 0;
+		for (Map.Entry<String, String> e : vars.entrySet()) {
+			props.setProperty(p + "customVar." + idx + ".name", e.getKey());
+			props.setProperty(p + "customVar." + idx + ".value", e.getValue());
+			idx++;
+		}
+	}
+
+	/**
+	 * Restore full device configuration from a {@link Properties} object produced
+	 * by {@link #deviceBackup(Properties)}.
+	 *
+	 * @param props source properties
+	 * @throws IOException
+	 * @throws TimeoutException
+	 * @throws InterruptedException
+	 */
+	public void deviceRestore(Properties props) throws IOException, TimeoutException, InterruptedException {
+		deviceRestore(props, DEFAULT_DEVICE_PREFIX);
+	}
+
+	/**
+	 * Restore full device configuration from a {@link Properties} object produced
+	 * by {@link #deviceBackup(Properties, String)}.
+	 *
+	 * @param props  source properties
+	 * @param prefix key prefix used during backup (e.g. {@code "device"})
+	 * @throws IOException
+	 * @throws TimeoutException
+	 * @throws InterruptedException
+	 */
+	public void deviceRestore(Properties props, String prefix)
+			throws IOException, TimeoutException, InterruptedException {
+		final String p = prefix + ".";
+
+		// node name
+		String name = props.getProperty(p + "name");
+		if (name != null)
+			setAdvertName(name);
+
+		// radio params
+		String freq = props.getProperty(p + "freq");
+		String bw = props.getProperty(p + "bw");
+		String sf = props.getProperty(p + "sf");
+		String cr = props.getProperty(p + "cr");
+		String repeat = props.getProperty(p + "clientRepeat");
+		if (freq != null && bw != null && sf != null && cr != null && repeat != null)
+			setRadioParams(Long.parseLong(freq), Long.parseLong(bw), Byte.parseByte(sf), Byte.parseByte(cr),
+					Boolean.parseBoolean(repeat));
+
+		String txPower = props.getProperty(p + "txPower");
+		if (txPower != null)
+			setRadioTxPower(Byte.parseByte(txPower));
+
+		// routing
+		String pathHashMode = props.getProperty(p + "pathHashMode");
+		if (pathHashMode != null)
+			setPathHashMode(Byte.parseByte(pathHashMode));
+
+		// advert / location
+		String latStr = props.getProperty(p + "lat");
+		String lonStr = props.getProperty(p + "lon");
+		if (latStr != null && lonStr != null)
+			setAdvertLatLon(Double.parseDouble(latStr), Double.parseDouble(lonStr), null);
+
+		// other params (manualAddContacts, telemetry, advertLocPolicy, multiAcks)
+		String manualAdd = props.getProperty(p + "manualAddContacts");
+		String telBaseEn = props.getProperty(p + "telemetryBaseEn");
+		String telBaseFav = props.getProperty(p + "telemetryBaseFav");
+		String telLocEn = props.getProperty(p + "telemetryLocEn");
+		String telLocFav = props.getProperty(p + "telemetryLocFav");
+		String telEnvEn = props.getProperty(p + "telemetryEnvEn");
+		String telEnvFav = props.getProperty(p + "telemetryEnvFav");
+		String advertLocPolicyStr = props.getProperty(p + "advertLocPolicy");
+		String multiAcksStr = props.getProperty(p + "multiAcks");
+		setOtherParams(manualAdd != null ? Boolean.parseBoolean(manualAdd) : null,
+				telBaseEn != null ? Boolean.parseBoolean(telBaseEn) : null,
+				telBaseFav != null ? Boolean.parseBoolean(telBaseFav) : null,
+				telLocEn != null ? Boolean.parseBoolean(telLocEn) : null,
+				telLocFav != null ? Boolean.parseBoolean(telLocFav) : null,
+				telEnvEn != null ? Boolean.parseBoolean(telEnvEn) : null,
+				telEnvFav != null ? Boolean.parseBoolean(telEnvFav) : null,
+				advertLocPolicyStr != null ? AdvertLocPolicy.valueOf(advertLocPolicyStr) : null,
+				multiAcksStr != null ? Boolean.parseBoolean(multiAcksStr) : null);
+
+		// autoadd
+		String autoaddConfigStr = props.getProperty(p + "autoaddConfig");
+		String autoaddMaxHopsStr = props.getProperty(p + "autoaddMaxHops");
+		if (autoaddConfigStr != null && autoaddMaxHopsStr != null)
+			setAutoAddConfig(Byte.parseByte(autoaddConfigStr), Integer.parseInt(autoaddMaxHopsStr));
+
+		// tuning
+		String rxDelayBase = props.getProperty(p + "rxDelayBase");
+		String airtimeFactor = props.getProperty(p + "airtimeFactor");
+		if (rxDelayBase != null && airtimeFactor != null)
+			setTuningParams(Double.parseDouble(rxDelayBase), Double.parseDouble(airtimeFactor));
+
+		// private key (skipped silently when import is disabled on device)
+		String privateKeyHex = props.getProperty(p + "privateKey");
+		if (privateKeyHex != null) {
+			try {
+				importPrivateKey(MeshcoreUtils.fromHex(privateKeyHex));
+			} catch (UnsupportedOperationException e) {
+				log.warning("Private key import is disabled on device — skipping restore of private key");
+			}
+		}
+
+		// PIN
+		String pinStr = props.getProperty(p + "pin");
+		if (pinStr != null) {
+			long pin = Long.parseLong(pinStr);
+			// 1_000_000 means no PIN in firmware — pass null to clear
+			setDevicePIN(pin >= 1_000_000L ? null : pin);
+		}
+
+		// custom vars
+		String countStr = props.getProperty(p + "customVars.count");
+		if (countStr != null) {
+			int count = Integer.parseInt(countStr);
+			for (int i = 0; i < count; i++) {
+				String varName = props.getProperty(p + "customVar." + i + ".name");
+				String varValue = props.getProperty(p + "customVar." + i + ".value");
+				if (varName != null && varValue != null)
+					setCustomVar(varName, varValue);
+			}
+		}
+	}
+
+	private static final String DEFAULT_CHANNELS_PREFIX = "channel";
+	private static final String DEFAULT_CONTACTS_PREFIX = "contact";
+
+	/**
+	 * Backup all group channels into a {@link Properties} object. Keys use the
+	 * {@code channel.N.*} namespace.
+	 *
+	 * @param props target properties (written to, not cleared first)
+	 */
+	public void channelsBackup(Properties props) {
+		channelsBackup(props, DEFAULT_CHANNELS_PREFIX);
+	}
+
+	/**
+	 * Backup all group channels into a {@link Properties} object. Keys use the
+	 * {@code <prefix>.N.*} namespace, with {@code <prefix>s.count} as the counter
+	 * key.
+	 *
+	 * @param props  target properties (written to, not cleared first)
+	 * @param prefix key prefix (e.g. {@code "channel"} produces keys like
+	 *               {@code channel.0.name})
+	 */
+	public void channelsBackup(Properties props, String prefix) {
+		int saved = 0;
+		for (ChannelInfo ch : channels.values()) {
+			props.setProperty(prefix + "." + saved + ".id", Integer.toString(ch.getId()));
+			props.setProperty(prefix + "." + saved + ".name", ch.getName());
+			props.setProperty(prefix + "." + saved + ".key", MeshcoreUtils.hex(ch.getPubkey()));
+			saved++;
+		}
+		props.setProperty(prefix + "s.count", Integer.toString(saved));
+	}
+
+	/**
+	 * Restore group channels from a {@link Properties} object produced by
+	 * {@link #channelsBackup(Properties)}.
+	 *
+	 * @param props source properties
+	 * @throws IOException
+	 * @throws TimeoutException
+	 * @throws InterruptedException
+	 */
+	public void channelsRestore(Properties props) throws IOException, TimeoutException, InterruptedException {
+		channelsRestore(props, DEFAULT_CHANNELS_PREFIX);
+	}
+
+	/**
+	 * Restore group channels from a {@link Properties} object produced by
+	 * {@link #channelsBackup(Properties, String)}.
+	 *
+	 * @param props  source properties
+	 * @param prefix key prefix used during backup (e.g. {@code "channel"})
+	 * @throws IOException
+	 * @throws TimeoutException
+	 * @throws InterruptedException
+	 */
+	public void channelsRestore(Properties props, String prefix)
+			throws IOException, TimeoutException, InterruptedException {
+		String countStr = props.getProperty(prefix + "s.count");
+		if (countStr == null)
+			return;
+		int count = Integer.parseInt(countStr);
+		for (int i = 0; i < count; i++) {
+			String idStr = props.getProperty(prefix + "." + i + ".id");
+			String chName = props.getProperty(prefix + "." + i + ".name");
+			String keyHex = props.getProperty(prefix + "." + i + ".key");
+			if (idStr != null && chName != null && keyHex != null)
+				setChannel(Integer.parseInt(idStr), chName, MeshcoreUtils.fromHex(keyHex));
+		}
+	}
+
+	/**
+	 * Backup all saved contacts as exported advert-packet blobs into a
+	 * {@link Properties} object. Keys use the {@code contact.N.*} namespace.
+	 *
+	 * @param props target properties (written to, not cleared first)
+	 * @throws IOException
+	 * @throws TimeoutException
+	 * @throws InterruptedException
+	 */
+	public void contactsBackup(Properties props) throws IOException, TimeoutException, InterruptedException {
+		contactsBackup(props, DEFAULT_CONTACTS_PREFIX);
+	}
+
+	/**
+	 * Backup all saved contacts as exported advert-packet blobs into a
+	 * {@link Properties} object. Keys use the {@code <prefix>.N.*} namespace, with
+	 * {@code <prefix>s.count} as the counter key.
+	 *
+	 * @param props  target properties (written to, not cleared first)
+	 * @param prefix key prefix (e.g. {@code "contact"} produces keys like
+	 *               {@code contact.0.advertPacket})
+	 * @throws IOException
+	 * @throws TimeoutException
+	 * @throws InterruptedException
+	 */
+	public void contactsBackup(Properties props, String prefix)
+			throws IOException, TimeoutException, InterruptedException {
+		if (contacts == null)
+			return;
+		int idx = 0;
+		for (Contact c : contacts.values()) {
+			byte[] blob = exportContact(c.getPubkey());
+			props.setProperty(prefix + "." + idx + ".advertPacket", MeshcoreUtils.hex(blob));
+			idx++;
+		}
+		props.setProperty(prefix + "s.count", Integer.toString(idx));
+	}
+
+	/**
+	 * Restore contacts from a {@link Properties} object produced by
+	 * {@link #contactsBackup(Properties)}. Existing contacts on the device are not
+	 * removed before restoring.
+	 *
+	 * @param props source properties
+	 * @throws IOException
+	 * @throws TimeoutException
+	 * @throws InterruptedException
+	 */
+	public void contactsRestore(Properties props) throws IOException, TimeoutException, InterruptedException {
+		contactsRestore(props, DEFAULT_CONTACTS_PREFIX);
+	}
+
+	/**
+	 * Restore contacts from a {@link Properties} object produced by
+	 * {@link #contactsBackup(Properties, String)}. Existing contacts on the device
+	 * are not removed before restoring.
+	 *
+	 * @param props  source properties
+	 * @param prefix key prefix used during backup (e.g. {@code "contact"})
+	 * @throws IOException
+	 * @throws TimeoutException
+	 * @throws InterruptedException
+	 */
+	public void contactsRestore(Properties props, String prefix)
+			throws IOException, TimeoutException, InterruptedException {
+		String countStr = props.getProperty(prefix + "s.count");
+		if (countStr == null)
+			return;
+		int count = Integer.parseInt(countStr);
+		for (int i = 0; i < count; i++) {
+			String blobHex = props.getProperty(prefix + "." + i + ".advertPacket");
+			if (blobHex != null)
+				importContact(MeshcoreUtils.fromHex(blobHex));
+		}
 	}
 }
