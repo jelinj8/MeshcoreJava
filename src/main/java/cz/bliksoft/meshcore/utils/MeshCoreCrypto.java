@@ -1,6 +1,7 @@
 package cz.bliksoft.meshcore.utils;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import javax.crypto.Cipher;
@@ -76,6 +77,98 @@ public class MeshCoreCrypto {
 			Cipher aes = Cipher.getInstance("AES/ECB/NoPadding");
 			aes.init(Cipher.DECRYPT_MODE, new SecretKeySpec(Arrays.copyOf(secret32, 16), "AES"));
 			return aes.doFinal(ciphertext);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	/**
+	 * Result of a successful GRP_TXT decryption via {@link #tryDecryptWithKey}.
+	 */
+	public static final class GrpTxtResult {
+		/** Unix epoch seconds (uint32 from plaintext bytes [0..3]). */
+		public final long timestamp;
+		/** Decoded message text (plaintext bytes [5..end]). */
+		public final String text;
+
+		GrpTxtResult(long timestamp, String text) {
+			this.timestamp = timestamp;
+			this.text = text;
+		}
+	}
+
+	/**
+	 * Attempt to decrypt a GRP_TXT payload with a known 16-byte channel key.
+	 *
+	 * <p>
+	 * Encryption chain:
+	 * <ul>
+	 * <li>payload[0] = {@code SHA256(key)[0]} (channel hash pre-filter)</li>
+	 * <li>payload[1..2] = {@code HMAC-SHA256(key||0x00*16, ciphertext)[0..1]}</li>
+	 * <li>payload[3..] = {@code AES-128-ECB(key, plaintext)}</li>
+	 * <li>plaintext = {@code timestamp(uint32LE,4B) + txtType(1B) + text}</li>
+	 * </ul>
+	 *
+	 * @param grpTxtPayload raw GRP_TXT payload (channelHash + 2-byte MAC + ciphertext)
+	 * @param key           16-byte AES-128 channel key (= {@code SHA256("#name")[0..15]})
+	 * @return decoded {@link GrpTxtResult}, or {@code null} if MAC/hash/sanity
+	 *         checks fail
+	 */
+	public static GrpTxtResult tryDecryptWithKey(byte[] grpTxtPayload, byte[] key) {
+		if (grpTxtPayload == null || grpTxtPayload.length < 1 + 2 + 16)
+			return null;
+		try {
+			// channelHash pre-filter: SHA256(key)[0]
+			Mac hmac = Mac.getInstance("HmacSHA256");
+			Cipher aes = Cipher.getInstance("AES/ECB/NoPadding");
+
+			java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+			if (md.digest(key)[0] != grpTxtPayload[0])
+				return null;
+
+			byte[] ciphertext = Arrays.copyOfRange(grpTxtPayload, 3, grpTxtPayload.length);
+			if (ciphertext.length % 16 != 0)
+				return null;
+
+			// MAC check: HMAC-SHA256(key||0x00*16, ciphertext)[0..1]
+			hmac.init(new SecretKeySpec(Arrays.copyOf(key, 32), "HmacSHA256"));
+			byte[] macBytes = hmac.doFinal(ciphertext);
+			if (macBytes[0] != grpTxtPayload[1] || macBytes[1] != grpTxtPayload[2])
+				return null;
+
+			// AES-128-ECB decrypt
+			aes.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"));
+			byte[] plain = aes.doFinal(ciphertext);
+
+			// timestamp (uint32LE, bytes [0..3])
+			long ts = (plain[0] & 0xFFL) | ((plain[1] & 0xFFL) << 8) | ((plain[2] & 0xFFL) << 16)
+					| ((plain[3] & 0xFFL) << 24);
+			if (ts < TS_MIN || ts > TS_MAX)
+				return null;
+
+			// byte [4] is TXT_TYPE — must be 0 (plain text)
+			if (plain[4] != 0)
+				return null;
+
+			// extract text from byte [5], validate printable chars, check zero-padding
+			int textEnd = 5;
+			while (textEnd < plain.length && plain[textEnd] != 0) {
+				byte b = plain[textEnd];
+				if (b > 0 && b < 0x09)
+					return null;
+				if (b > 0x0D && b < 0x20)
+					return null;
+				textEnd++;
+			}
+			if (textEnd == 5)
+				return null; // empty text
+			if (textEnd < plain.length) {
+				for (int j = textEnd + 1; j < plain.length; j++)
+					if (plain[j] != 0)
+						return null;
+			}
+
+			return new GrpTxtResult(ts, new String(plain, 5, textEnd - 5, StandardCharsets.UTF_8));
 		} catch (Exception e) {
 			return null;
 		}

@@ -7,7 +7,7 @@ import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
 import cz.bliksoft.meshcore.frames.OtaConstants.OtaPayloadType;
 import cz.bliksoft.meshcore.frames.OtaConstants.OtaRouteType;
 import cz.bliksoft.meshcore.frames.resp.ChannelInfo;
-import cz.bliksoft.meshcore.utils.ChannelBruteForce;
+import cz.bliksoft.meshcore.utils.MeshCoreCrypto;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 /**
@@ -40,8 +40,8 @@ public class OtaGroupFrame extends OtaFrame {
 	/** Plaintext message, or {@code null} if not yet decrypted. */
 	public String decryptedText = null;
 
-	OtaGroupFrame(MeshcoreCompanion source, OtaRouteType route, OtaPayloadType payloadType, int ver, int tc0, int tc1, int hashSize, byte[] path,
-			byte[] payloadBytes) {
+	OtaGroupFrame(MeshcoreCompanion source, OtaRouteType route, OtaPayloadType payloadType, int ver, int tc0, int tc1,
+			int hashSize, byte[] path, byte[] payloadBytes) {
 		super(source, route, payloadType, ver, tc0, tc1, hashSize, path, payloadBytes);
 		channelHash = payloadBytes.length >= 1 ? payloadBytes[0] & 0xFF : -1;
 		macAndCipher = payloadBytes.length >= 1 ? Arrays.copyOfRange(payloadBytes, 1, payloadBytes.length)
@@ -51,8 +51,8 @@ public class OtaGroupFrame extends OtaFrame {
 	/**
 	 * Try to decrypt this group payload using the supplied known channels. The
 	 * 1-byte channel hash pre-filter inside
-	 * {@link ChannelBruteForce#tryDecryptWithKey} makes mismatches cheap. On
-	 * success the decrypted data is stored in {@link #decryptedChannelName},
+	 * {@link MeshCoreCrypto#tryDecryptWithKey} makes mismatches cheap. On success
+	 * the decrypted data is stored in {@link #decryptedChannelName},
 	 * {@link #decryptedKey}, {@link #decryptedTimestamp}, and
 	 * {@link #decryptedText}.
 	 *
@@ -63,14 +63,14 @@ public class OtaGroupFrame extends OtaFrame {
 		if (channelHash < 0 || macAndCipher.length < 18)
 			return false;
 		for (ChannelInfo ch : channels) {
-			if (ChannelBruteForce.tryDecryptWithKey(payloadBytes, ch.getName(), ch.getPubkey(),
-					(name, key, ts, text) -> {
-						decryptedChannelName = name;
-						decryptedKey = key;
-						decryptedTimestamp = ts;
-						decryptedText = text;
-					}))
+			MeshCoreCrypto.GrpTxtResult result = MeshCoreCrypto.tryDecryptWithKey(payloadBytes, ch.getPubkey());
+			if (result != null) {
+				decryptedChannelName = ch.getName();
+				decryptedKey = ch.getPubkey();
+				decryptedTimestamp = result.timestamp;
+				decryptedText = result.text;
 				return true;
+			}
 		}
 		return false;
 	}

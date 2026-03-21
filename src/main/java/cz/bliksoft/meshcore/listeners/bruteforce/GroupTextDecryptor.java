@@ -1,4 +1,4 @@
-package cz.bliksoft.meshcore.utils;
+package cz.bliksoft.meshcore.listeners.bruteforce;
 
 import java.util.Arrays;
 import java.util.Map;

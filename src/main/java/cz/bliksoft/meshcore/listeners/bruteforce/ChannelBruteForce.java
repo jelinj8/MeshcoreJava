@@ -1,4 +1,4 @@
-package cz.bliksoft.meshcore.utils;
+package cz.bliksoft.meshcore.listeners.bruteforce;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -12,6 +12,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
+import cz.bliksoft.meshcore.utils.MeshCoreCrypto;
+import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 /**
  * Brute-force discovery of MeshCore group channel names from captured GRP_TXT
@@ -286,61 +289,10 @@ public class ChannelBruteForce {
 	 */
 	public static boolean tryDecryptWithKey(byte[] grpTxtPayload, String channelName, byte[] key,
 			MatchCallback callback) {
-		if (grpTxtPayload.length < 1 + 2 + 16)
+		MeshCoreCrypto.GrpTxtResult result = MeshCoreCrypto.tryDecryptWithKey(grpTxtPayload, key);
+		if (result == null)
 			return false;
-		try {
-			// channelHash pre-filter
-			MessageDigest md = TL_SHA256.get();
-			md.reset();
-			if (md.digest(key)[0] != grpTxtPayload[0])
-				return false;
-
-			byte[] ciphertext = Arrays.copyOfRange(grpTxtPayload, 3, grpTxtPayload.length);
-			if (ciphertext.length % 16 != 0)
-				return false;
-
-			// MAC check
-			Mac hmac = TL_HMAC.get();
-			hmac.init(new SecretKeySpec(Arrays.copyOf(key, 32), "HmacSHA256"));
-			byte[] macBytes = hmac.doFinal(ciphertext);
-			if (macBytes[0] != grpTxtPayload[1] || macBytes[1] != grpTxtPayload[2])
-				return false;
-
-			// AES-128-ECB decrypt
-			Cipher aes = TL_AES.get();
-			aes.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"));
-			byte[] plain = aes.doFinal(ciphertext);
-
-			long ts = (plain[0] & 0xFFL) | ((plain[1] & 0xFFL) << 8) | ((plain[2] & 0xFFL) << 16)
-					| ((plain[3] & 0xFFL) << 24);
-			if (ts < MeshCoreCrypto.TS_MIN || ts > MeshCoreCrypto.TS_MAX)
-				return false;
-
-			if (plain[4] != 0)
-				return false; // TXT_TYPE must be 0 (plain)
-
-			int textEnd = 5;
-			while (textEnd < plain.length && plain[textEnd] != 0) {
-				byte b = plain[textEnd];
-				if (b > 0 && b < 0x09)
-					return false;
-				if (b > 0x0D && b < 0x20)
-					return false;
-				textEnd++;
-			}
-			if (textEnd == 5)
-				return false;
-			if (textEnd < plain.length) {
-				for (int j = textEnd + 1; j < plain.length; j++)
-					if (plain[j] != 0)
-						return false;
-			}
-
-			String text = new String(plain, 5, textEnd - 5, StandardCharsets.UTF_8);
-			callback.onMatch(channelName, key, ts, text);
-			return true;
-		} catch (Exception e) {
-			return false;
-		}
+		callback.onMatch(channelName, key, result.timestamp, result.text);
+		return true;
 	}
 }
