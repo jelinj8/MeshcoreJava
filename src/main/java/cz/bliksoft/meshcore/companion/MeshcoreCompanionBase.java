@@ -74,30 +74,6 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	 */
 	protected volatile boolean running = false;
 
-	public int getProtocolVersion() {
-		return protocolVersion;
-	}
-
-	public void setProtocolVersion(int protocolVersion) {
-		this.protocolVersion = protocolVersion;
-	}
-
-	public int getMaxChannels() {
-		return maxChannels;
-	}
-
-	public void setMaxChannels(int maxChannels) {
-		this.maxChannels = maxChannels;
-	}
-
-	public int getMaxContacts() {
-		return maxContacts;
-	}
-
-	public void setMaxContacts(int maxContacts) {
-		this.maxContacts = maxContacts;
-	}
-
 	public String getName() {
 		return name;
 	}
@@ -106,37 +82,11 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 		this.name = name;
 	}
 
-	public DeviceInfo getDeviceInfo() {
-		return deviceInfo;
-	}
-
-	public SelfInfo getSelfInfo() {
-		return selfInfo;
-	}
-
-	/**
-	 * set by deviceInit according to returned device info
-	 */
-	protected int protocolVersion = 0;
-
-	/**
-	 * maximum channels
-	 */
-	protected int maxChannels = 0;
-
-	/**
-	 * maximum contacts
-	 */
-	protected int maxContacts = 0;
-
 	protected String name = "meshcore";
 
 	// single pending blocking request (serialized by requestLock)
 	private volatile CompletableFuture<ResponseFrame> pendingFuture;
 	private volatile byte[] pendingAcceptCodes;
-
-	private DeviceInfo deviceInfo = null;
-	private SelfInfo selfInfo = null;
 
 	// ----------------- Core concurrency: send + await response -----------------
 
@@ -281,6 +231,17 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 		} finally {
 			running = false;
 		}
+	}
+
+	private DeviceInfo deviceInfo = null;
+	private SelfInfo selfInfo = null;
+
+	public DeviceInfo getDeviceInfo() {
+		return deviceInfo;
+	}
+
+	public SelfInfo getSelfInfo() {
+		return selfInfo;
 	}
 
 	/**

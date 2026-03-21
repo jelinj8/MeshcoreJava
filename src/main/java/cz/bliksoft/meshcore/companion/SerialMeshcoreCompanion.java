@@ -12,7 +12,6 @@ import java.util.logging.Logger;
 import com.fazecast.jSerialComm.SerialPort;
 
 import cz.bliksoft.meshcore.frames.FrameConstants;
-import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 public class SerialMeshcoreCompanion extends MeshcoreCompanion {
 	private static final Logger log = Logger.getLogger(SerialMeshcoreCompanion.class.getName());

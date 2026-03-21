@@ -117,7 +117,7 @@ public class GroupTextDecryptor {
 			int rssi = frame.getRssi();
 
 			// Stage 1: channels configured in the companion
-			for (ChannelInfo ch : companion.getChannels()) {
+			for (ChannelInfo ch : companion.getConfig().getChannels()) {
 				if (ChannelBruteForce.tryDecryptWithKey(grpPayload, ch.getName(), ch.getPubkey(),
 						(name, key, ts, text) -> listener.onDecrypted(name, key, ts, text, snr, rssi)))
 					return;

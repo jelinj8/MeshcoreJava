@@ -123,7 +123,7 @@ public class LogRXDataPush extends ResponseFrame {
 			String decoded;
 			if (frame instanceof OtaUnicastFrame) {
 				if (decodePaylodad)
-					tryDecryptTxtMsg(companion.getPrivateKey());
+					tryDecryptTxtMsg(companion.getConfig().getPrivateKey());
 				decoded = frame.toString();
 			} else if (frame instanceof OtaGroupFrame) {
 				if (decodePaylodad)
@@ -155,7 +155,7 @@ public class LogRXDataPush extends ResponseFrame {
 		OtaFrame frame = getOtaFrame();
 		if (!(frame instanceof OtaGroupFrame))
 			return false;
-		return ((OtaGroupFrame) frame).tryDecrypt(companion.getChannels());
+		return ((OtaGroupFrame) frame).tryDecrypt(companion.getConfig().getChannels());
 	}
 
 	/**
@@ -182,7 +182,7 @@ public class LogRXDataPush extends ResponseFrame {
 		if (si != null && unicast.destHash != (si.getPubkey()[0] & 0xFF))
 			return false;
 
-		for (Contact contact : companion.findContacts(new byte[] { (byte) unicast.srcHash }, null)) {
+		for (Contact contact : companion.getConfig().findContacts(new byte[] { (byte) unicast.srcHash }, null)) {
 			if (unicast.tryDecryptTxtMsg(contact, ourPrivKey64))
 				return true;
 		}

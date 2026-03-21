@@ -121,7 +121,7 @@ public class ContactMsgRecv extends MessageFrameGroup {
 
 	@Override
 	public String toString() {
-		Contact c = companion.getContact(from6);
+		Contact c = companion.getConfig().getContact(from6);
 		String cName = c == null ? "?" : c.getName();
 		return String.format("%s sender6=%s:%s timestamp=%s snr=%.2f pathLen=%d flood=%b text=%s", getFrameType(),
 				MeshcoreUtils.hex(from6), cName, MeshcoreUtils.formatMeshcoreTs(timestamp), snr4 / 4.0, pathLen,

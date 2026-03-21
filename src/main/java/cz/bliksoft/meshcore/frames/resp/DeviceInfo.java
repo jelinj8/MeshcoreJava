@@ -89,8 +89,6 @@ public class DeviceInfo extends ResponseFrame {
 			maxContacts = -1;
 			maxGroupChannels = -1;
 		}
-		source.setMaxChannels(maxGroupChannels);
-		source.setMaxContacts(maxContacts);
 
 		// (4) BLE pin
 		blePIN = br.readUInt32LE();
@@ -116,8 +114,6 @@ public class DeviceInfo extends ResponseFrame {
 		} else {
 			pathHashMode = 0;
 		}
-
-		companion.setProtocolVersion(protocolVersion);
 	}
 
 	@Override

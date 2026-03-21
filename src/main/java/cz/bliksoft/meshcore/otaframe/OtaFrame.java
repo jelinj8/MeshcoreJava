@@ -153,7 +153,7 @@ public abstract class OtaFrame {
 			ByteReader br = new ByteReader(path);
 			for (int i = 0; i < path.length / hashSize; i++) {
 				byte[] prefix = br.readBytes(hashSize);
-				List<Contact> contacts = source.findContacts(prefix, null);
+				List<Contact> contacts = source.getConfig().findContacts(prefix, null);
 				if (contacts.size() == 0) {
 					if (i > 0)
 						sb.append("\n");

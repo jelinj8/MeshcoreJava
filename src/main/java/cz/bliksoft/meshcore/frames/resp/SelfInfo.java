@@ -144,17 +144,17 @@ public class SelfInfo extends ResponseFrame {
 		lon = br.readInt32LE() / 1000000.0;
 
 		byte multiAcksByte = br.readByte();
-		multiAcks = (companion.getProtocolVersion() >= 7) && (multiAcksByte != 0);
+		multiAcks = (companion.getConfig().getProtocolVersion() >= 7) && (multiAcksByte != 0);
 
 		byte advertLocPolicyByte = br.readByte();
-		advertLocPolicy = (companion.getProtocolVersion() >= 7) ? AdvertLocPolicy.fromByte(advertLocPolicyByte)
+		advertLocPolicy = (companion.getConfig().getProtocolVersion() >= 7) ? AdvertLocPolicy.fromByte(advertLocPolicyByte)
 				: AdvertLocPolicy.ADVERT_LOC_NONE;
 
 		// telemetryMode byte layout (v5+): bits [5:4]=env_mode, bits [3:2]=loc_mode,
 		// bits [1:0]=base_mode
 		// Each 2-bit field: 0=disabled, 1=allow_favorites_only, 2=allow_all
 		byte telemetryMode = br.readByte();
-		if (companion.getProtocolVersion() >= 5) {
+		if (companion.getConfig().getProtocolVersion() >= 5) {
 			telemetryModeEnvEn = (telemetryMode
 					& (TelemetryModeFlags.ENV_ALLOW_FAVORITES.mask() | TelemetryModeFlags.ENV_ALLOW_ALL.mask())) != 0;
 			telemetryModeEnvFav = (telemetryMode & TelemetryModeFlags.ENV_ALLOW_FAVORITES.mask()) != 0;

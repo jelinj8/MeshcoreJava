@@ -103,7 +103,7 @@ public class ChannelMsgRecv extends MessageFrameGroup {
 
 	@Override
 	public String toString() {
-		ChannelInfo ch = companion.getChannel(channelIdx);
+		ChannelInfo ch = companion.getConfig().getChannel(channelIdx);
 		String channelName = (ch != null ? ch.getName() : "?");
 
 		return String.format("%s channel=%d:%s timestamp=%s snr=%.2f pathLen=%d flood=%b text=%s", getFrameType(),
