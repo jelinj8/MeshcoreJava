@@ -17,7 +17,7 @@ public class CmdSetAdvertLatLon extends CommandFrame {
 	 * @param lon
 	 * @param alt
 	 */
-	public CmdSetAdvertLatLon(long lat, double lon, Integer alt) {
+	public CmdSetAdvertLatLon(double lat, double lon, Integer alt) {
 		this.lat = lat;
 		this.lon = lon;
 		this.alt = alt;

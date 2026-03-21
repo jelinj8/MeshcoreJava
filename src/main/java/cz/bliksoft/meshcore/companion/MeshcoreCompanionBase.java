@@ -244,6 +244,14 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 		return selfInfo;
 	}
 
+	public void refreshDeviceInfo() throws IOException, TimeoutException, InterruptedException {
+		deviceInfo = (DeviceInfo) sendFrameWithResult(new CmdDeviceQuery(), 1000);
+	}
+
+	public void refreshSelfInfo() throws IOException, TimeoutException, InterruptedException {
+		selfInfo = (SelfInfo) sendFrameWithResult(new CmdAppStart("BSMeshcore"), 1000);
+	}
+
 	/**
 	 * initial protocol handshake
 	 * 
@@ -252,8 +260,8 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	 * @throws TimeoutException
 	 */
 	protected void deviceHandshake() throws IOException, TimeoutException, InterruptedException {
-		deviceInfo = (DeviceInfo) sendFrameWithResult(new CmdDeviceQuery(), 1000);
-		selfInfo = (SelfInfo) sendFrameWithResult(new CmdAppStart("BSMeshcore"), 1000);
+		refreshDeviceInfo();
+		refreshSelfInfo();
 	}
 
 	/**

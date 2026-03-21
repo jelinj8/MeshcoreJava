@@ -8,17 +8,46 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import cz.bliksoft.meshcore.CompanionErrorException;
 import cz.bliksoft.meshcore.FrameListener;
 import cz.bliksoft.meshcore.FrameListenerRegistry;
 import cz.bliksoft.meshcore.Settings;
 import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.Frame;
+import cz.bliksoft.meshcore.frames.FrameConstants.MessageTextType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.cmd.CmdFactoryReset;
-import cz.bliksoft.meshcore.frames.cmd.CmdGetAdvertPath;
+import cz.bliksoft.meshcore.frames.cmd.CmdHasConnection;
+import cz.bliksoft.meshcore.frames.cmd.CmdLogout;
+import cz.bliksoft.meshcore.frames.cmd.CmdReboot;
+import cz.bliksoft.meshcore.frames.cmd.CmdSendAnonReq;
+import cz.bliksoft.meshcore.frames.cmd.CmdSendBinaryReq;
+import cz.bliksoft.meshcore.frames.cmd.CmdSendChannelTxtMessage;
+import cz.bliksoft.meshcore.frames.cmd.CmdSendControlData;
+import cz.bliksoft.meshcore.frames.cmd.CmdSendLogin;
+import cz.bliksoft.meshcore.frames.cmd.CmdSendPathDiscoveryReq;
+import cz.bliksoft.meshcore.frames.cmd.CmdSendRawData;
+import cz.bliksoft.meshcore.frames.cmd.CmdSendSelfAdvert;
+import cz.bliksoft.meshcore.frames.cmd.CmdSendStatusReq;
+import cz.bliksoft.meshcore.frames.cmd.CmdSendTelemetryReq;
+import cz.bliksoft.meshcore.frames.cmd.CmdSendTracePath;
+import cz.bliksoft.meshcore.frames.cmd.CmdSendTxtMsg;
+import cz.bliksoft.meshcore.frames.cmd.CmdSignData;
+import cz.bliksoft.meshcore.frames.cmd.CmdSignFinish;
+import cz.bliksoft.meshcore.frames.cmd.CmdSignStart;
 import cz.bliksoft.meshcore.frames.cmd.CmdSyncNext;
 import cz.bliksoft.meshcore.frames.push.MessageWaitingPush;
+import cz.bliksoft.meshcore.frames.resp.Error;
+import cz.bliksoft.meshcore.frames.push.BinaryResponsePush;
+import cz.bliksoft.meshcore.frames.push.PathDiscoveryResponsePush;
+import cz.bliksoft.meshcore.frames.push.SendConfirmedPush;
+import cz.bliksoft.meshcore.frames.push.StatusResponsePush;
+import cz.bliksoft.meshcore.frames.push.TelemetryResponsePush;
+import cz.bliksoft.meshcore.frames.push.TraceDataPush;
+import cz.bliksoft.meshcore.frames.resp.Sent;
+import cz.bliksoft.meshcore.frames.resp.Signature;
+import cz.bliksoft.meshcore.frames.resp.SignStart;
 
 public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 
@@ -265,5 +294,260 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 		config.reset();
 	}
 
-	
+	private static final long DEFAULT_CMD_TIMEOUT = 2000L;
+	private static final long DEFAULT_MSG_TIMEOUT = 30000L;
+
+	/** Reboot the device. Fire-and-forget — no response expected. */
+	public void reboot() throws IOException {
+		sendFrame(new CmdReboot());
+	}
+
+	/**
+	 * @return true if the device currently has an active connection to the contact
+	 */
+	public boolean hasConnection(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(new CmdHasConnection(pubkey), DEFAULT_CMD_TIMEOUT);
+		return !(resp instanceof Error);
+	}
+
+	/**
+	 * Send the device's own advert over the mesh.
+	 *
+	 * @param method {@link CmdSendSelfAdvert.AdvertMethod#FLOOD} or
+	 *               {@code ZERO_HOP}
+	 */
+	public void sendSelfAdvert(CmdSendSelfAdvert.AdvertMethod method)
+			throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(new CmdSendSelfAdvert(method), DEFAULT_CMD_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+	}
+
+	/** Send a direct text message and wait for delivery confirmation. */
+	public SendConfirmedPush sendTxtMsg(MessageTextType txtType, byte[] prefix6, Integer attempt, Long timestamp,
+			String text) throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResultAndResponse(
+				new CmdSendTxtMsg(txtType, prefix6, attempt, timestamp, text), DEFAULT_CMD_TIMEOUT,
+				DEFAULT_MSG_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (SendConfirmedPush) resp;
+	}
+
+	/**
+	 * Send a direct text message and return {@link Sent} immediately without
+	 * waiting for delivery confirmation.
+	 */
+	public Sent sendTxtMsgAsync(MessageTextType txtType, byte[] prefix6, Integer attempt, Long timestamp, String text)
+			throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(new CmdSendTxtMsg(txtType, prefix6, attempt, timestamp, text),
+				DEFAULT_CMD_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (Sent) resp;
+	}
+
+	/**
+	 * Send a text message to a group channel.
+	 */
+	public ResponseFrame sendChannelTxtMessage(MessageTextType txtType, int channelId, Long timestamp, String text)
+			throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(new CmdSendChannelTxtMessage(txtType, channelId, timestamp, text),
+				DEFAULT_CMD_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return resp;
+	}
+
+	/**
+	 * Send raw data directly via a known path.
+	 */
+	public void sendRawData(int pathLen, byte[] path, byte[] data)
+			throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(new CmdSendRawData(pathLen, path, data), DEFAULT_CMD_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+	}
+
+	/** Send a binary request and wait for the binary response push. */
+	public BinaryResponsePush sendBinaryReq(byte[] pubkey32, byte[] data)
+			throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResultAndResponse(new CmdSendBinaryReq(pubkey32, data), DEFAULT_CMD_TIMEOUT,
+				DEFAULT_MSG_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (BinaryResponsePush) resp;
+	}
+
+	/**
+	 * Send a binary request and return {@link Sent} immediately without waiting for
+	 * the response push.
+	 */
+	public Sent sendBinaryReqAsync(byte[] pubkey32, byte[] data)
+			throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(new CmdSendBinaryReq(pubkey32, data), DEFAULT_CMD_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (Sent) resp;
+	}
+
+	/**
+	 * Send an anonymous request. Returns RESP_SENT; no async response is defined.
+	 */
+	public Sent sendAnonReq(byte[] pubkey, byte[] msgData) throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(new CmdSendAnonReq(pubkey, msgData), DEFAULT_CMD_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (Sent) resp;
+	}
+
+	/** Send a status request and wait for the status response push. */
+	public StatusResponsePush sendStatusReq(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResultAndResponse(new CmdSendStatusReq(pubkey), DEFAULT_CMD_TIMEOUT,
+				DEFAULT_MSG_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (StatusResponsePush) resp;
+	}
+
+	/**
+	 * Send a status request and return {@link Sent} immediately without waiting for
+	 * the response push.
+	 */
+	public Sent sendStatusReqAsync(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(new CmdSendStatusReq(pubkey), DEFAULT_CMD_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (Sent) resp;
+	}
+
+	/**
+	 * Send a telemetry request and wait for the response push. Pass {@code null}
+	 * for self-telemetry (no async response).
+	 */
+	public TelemetryResponsePush sendTelemetryReq(byte[] pubkey)
+			throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResultAndResponse(new CmdSendTelemetryReq(pubkey), DEFAULT_CMD_TIMEOUT,
+				DEFAULT_MSG_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (TelemetryResponsePush) resp;
+	}
+
+	/**
+	 * Send a telemetry request and return {@link Sent} immediately without waiting
+	 * for the response push.
+	 */
+	public Sent sendTelemetryReqAsync(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(new CmdSendTelemetryReq(pubkey), DEFAULT_CMD_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (Sent) resp;
+	}
+
+	/** Send a trace-path packet and wait for the trace data push. */
+	public TraceDataPush sendTracePath(byte[] tag, long auth, byte flags, byte[] path)
+			throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResultAndResponse(new CmdSendTracePath(tag, auth, flags, path),
+				DEFAULT_CMD_TIMEOUT, DEFAULT_MSG_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (TraceDataPush) resp;
+	}
+
+	/**
+	 * Send a trace-path packet and return {@link Sent} immediately without waiting
+	 * for the trace data push.
+	 */
+	public Sent sendTracePathAsync(byte[] tag, long auth, byte flags, byte[] path)
+			throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(new CmdSendTracePath(tag, auth, flags, path), DEFAULT_CMD_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (Sent) resp;
+	}
+
+	/**
+	 * Trigger path-discovery for a contact and wait for the discovery response
+	 * push.
+	 */
+	public PathDiscoveryResponsePush sendPathDiscoveryReq(byte[] pubkey)
+			throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResultAndResponse(new CmdSendPathDiscoveryReq(pubkey), DEFAULT_CMD_TIMEOUT,
+				DEFAULT_MSG_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (PathDiscoveryResponsePush) resp;
+	}
+
+	/**
+	 * Trigger path-discovery and return {@link Sent} immediately without waiting
+	 * for the discovery response push.
+	 */
+	public Sent sendPathDiscoveryReqAsync(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(new CmdSendPathDiscoveryReq(pubkey), DEFAULT_CMD_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (Sent) resp;
+	}
+
+	/**
+	 * Send control data (first byte must have bit 7 set).
+	 */
+	public void sendControlData(byte[] data) throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(new CmdSendControlData(data), DEFAULT_CMD_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+	}
+
+	/**
+	 * Log in to a room server. Returns the login success/fail push.
+	 */
+	public ResponseFrame login(byte[] pubkey, String password)
+			throws IOException, TimeoutException, InterruptedException {
+		return sendFrameWithResultAndResponse(new CmdSendLogin(pubkey, password), DEFAULT_CMD_TIMEOUT,
+				DEFAULT_MSG_TIMEOUT);
+	}
+
+	/**
+	 * Send a login request and return {@link Sent} immediately without waiting for
+	 * login success/fail push.
+	 */
+	public Sent loginAsync(byte[] pubkey, String password) throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(new CmdSendLogin(pubkey, password), DEFAULT_CMD_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (Sent) resp;
+	}
+
+	/**
+	 * Disconnect from a room server.
+	 */
+	public void logout(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(new CmdLogout(pubkey), DEFAULT_CMD_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+	}
+
+	/**
+	 * Sign data using the device's private key.
+	 *
+	 * @param data data to sign; must fit within the max length reported by the
+	 *             device
+	 * @return 64-byte Ed25519 signature
+	 */
+	public byte[] sign(byte[] data) throws IOException, TimeoutException, InterruptedException {
+		SignStart signStart = (SignStart) sendFrameWithResult(new CmdSignStart(), DEFAULT_CMD_TIMEOUT);
+		if (data.length > signStart.getMaxDataLength())
+			throw new IllegalArgumentException(
+					"Data too large to sign: " + data.length + " > " + signStart.getMaxDataLength());
+		ResponseFrame dataResp = sendFrameWithResult(new CmdSignData(data), DEFAULT_CMD_TIMEOUT);
+		if (dataResp instanceof Error)
+			throw new CompanionErrorException("Sign data rejected: " + dataResp);
+		ResponseFrame finishResp = sendFrameWithResult(new CmdSignFinish(), DEFAULT_CMD_TIMEOUT);
+		if (finishResp instanceof Error)
+			throw new CompanionErrorException("Sign finish failed: " + finishResp);
+		return ((Signature) finishResp).getSignature();
+	}
+
 }

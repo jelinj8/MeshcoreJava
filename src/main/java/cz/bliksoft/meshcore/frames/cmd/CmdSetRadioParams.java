@@ -14,11 +14,11 @@ public class CmdSetRadioParams extends CommandFrame {
 
 	/**
 	 * 
-	 * @param freq (Hz)
-	 * @param bw (Hz)
+	 * @param freq (Hz) frequency
+	 * @param bw (Hz) bandwidth
 	 * @param sf
 	 * @param cr
-	 * @param repeat
+	 * @param repeat act as repeater
 	 */
 	public CmdSetRadioParams(long freq, long bw, byte sf, byte cr, Boolean repeat) {
 		this.freq = freq;
