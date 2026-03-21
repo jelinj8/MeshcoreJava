@@ -819,37 +819,36 @@ public class MeshcoreCompanionConfig {
 		CustomVars cv = getCustomVars();
 
 		final String p = prefix + ".";
+		final String r = p + "radio.";
+		final String a = p + "advert.";
+		final String t = p + "telemetry.";
 
-		// node identity
-		props.setProperty(p + "name", si.getNodeName());
+		// advert / identity
+		props.setProperty(a + "name", si.getNodeName());
+		props.setProperty(a + "locPolicy", si.getAdvertLocPolicy().name());
+		props.setProperty(a + "lat", Double.toString(si.getLat()));
+		props.setProperty(a + "lon", Double.toString(si.getLon()));
 
 		// radio params
-		props.setProperty(p + "freq", Long.toString(si.getFreq()));
-		props.setProperty(p + "bw", Long.toString(si.getBw()));
-		props.setProperty(p + "sf", Integer.toString(si.getSf()));
-		props.setProperty(p + "cr", Integer.toString(si.getCr()));
-		props.setProperty(p + "clientRepeat", Boolean.toString(di.isClientRepeat()));
-		props.setProperty(p + "txPower", Integer.toString(si.getTxPowerDbm()));
+		props.setProperty(r + "freq", Long.toString(si.getFreq()));
+		props.setProperty(r + "bw", Long.toString(si.getBw()));
+		props.setProperty(r + "sf", Integer.toString(si.getSf()));
+		props.setProperty(r + "cr", Integer.toString(si.getCr()));
+		props.setProperty(r + "clientRepeat", Boolean.toString(di.isClientRepeat()));
+		props.setProperty(r + "txPower", Integer.toString(si.getTxPowerDbm()));
+		props.setProperty(r + "pathHashMode", Integer.toString(di.getPathHashMode()));
 
-		// routing / path
-		props.setProperty(p + "pathHashMode", Integer.toString(di.getPathHashMode()));
-
-		// advert / location
-		props.setProperty(p + "advertLocPolicy", si.getAdvertLocPolicy().name());
-		props.setProperty(p + "lat", Double.toString(si.getLat()));
-		props.setProperty(p + "lon", Double.toString(si.getLon()));
+		// telemetry modes
+		props.setProperty(t + "baseEn", Boolean.toString(si.isTelemetryModeBaseEn()));
+		props.setProperty(t + "baseFav", Boolean.toString(si.isTelemetryModeBaseFav()));
+		props.setProperty(t + "locEn", Boolean.toString(si.isTelemetryModeLocEn()));
+		props.setProperty(t + "locFav", Boolean.toString(si.isTelemetryModeLocFav()));
+		props.setProperty(t + "envEn", Boolean.toString(si.isTelemetryModeEnvEn()));
+		props.setProperty(t + "envFav", Boolean.toString(si.isTelemetryModeEnvFav()));
 
 		// contact / message behaviour
 		props.setProperty(p + "manualAddContacts", Boolean.toString(si.isManualAddContacts()));
 		props.setProperty(p + "multiAcks", Boolean.toString(si.getMultiAcks()));
-
-		// telemetry modes
-		props.setProperty(p + "telemetryBaseEn", Boolean.toString(si.isTelemetryModeBaseEn()));
-		props.setProperty(p + "telemetryBaseFav", Boolean.toString(si.isTelemetryModeBaseFav()));
-		props.setProperty(p + "telemetryLocEn", Boolean.toString(si.isTelemetryModeLocEn()));
-		props.setProperty(p + "telemetryLocFav", Boolean.toString(si.isTelemetryModeLocFav()));
-		props.setProperty(p + "telemetryEnvEn", Boolean.toString(si.isTelemetryModeEnvEn()));
-		props.setProperty(p + "telemetryEnvFav", Boolean.toString(si.isTelemetryModeEnvFav()));
 
 		// autoadd
 		props.setProperty(p + "autoaddConfig", Byte.toString(ac.getAutoaddConfig()));
@@ -906,46 +905,47 @@ public class MeshcoreCompanionConfig {
 	public void deviceRestore(Properties props, String prefix)
 			throws IOException, TimeoutException, InterruptedException {
 		final String p = prefix + ".";
+		final String r = p + "radio.";
+		final String a = p + "advert.";
+		final String t = p + "telemetry.";
 
-		// node name
-		String name = props.getProperty(p + "name");
+		// advert / identity
+		String name = props.getProperty(a + "name");
 		if (name != null)
 			setAdvertName(name);
 
+		String latStr = props.getProperty(a + "lat");
+		String lonStr = props.getProperty(a + "lon");
+		if (latStr != null && lonStr != null)
+			setAdvertLatLon(Double.parseDouble(latStr), Double.parseDouble(lonStr), null);
+
 		// radio params
-		String freq = props.getProperty(p + "freq");
-		String bw = props.getProperty(p + "bw");
-		String sf = props.getProperty(p + "sf");
-		String cr = props.getProperty(p + "cr");
-		String repeat = props.getProperty(p + "clientRepeat");
+		String freq = props.getProperty(r + "freq");
+		String bw = props.getProperty(r + "bw");
+		String sf = props.getProperty(r + "sf");
+		String cr = props.getProperty(r + "cr");
+		String repeat = props.getProperty(r + "clientRepeat");
 		if (freq != null && bw != null && sf != null && cr != null && repeat != null)
 			setRadioParams(Long.parseLong(freq), Long.parseLong(bw), Byte.parseByte(sf), Byte.parseByte(cr),
 					Boolean.parseBoolean(repeat));
 
-		String txPower = props.getProperty(p + "txPower");
+		String txPower = props.getProperty(r + "txPower");
 		if (txPower != null)
 			setRadioTxPower(Byte.parseByte(txPower));
 
-		// routing
-		String pathHashMode = props.getProperty(p + "pathHashMode");
+		String pathHashMode = props.getProperty(r + "pathHashMode");
 		if (pathHashMode != null)
 			setPathHashMode(Byte.parseByte(pathHashMode));
 
-		// advert / location
-		String latStr = props.getProperty(p + "lat");
-		String lonStr = props.getProperty(p + "lon");
-		if (latStr != null && lonStr != null)
-			setAdvertLatLon(Double.parseDouble(latStr), Double.parseDouble(lonStr), null);
-
 		// other params (manualAddContacts, telemetry, advertLocPolicy, multiAcks)
 		String manualAdd = props.getProperty(p + "manualAddContacts");
-		String telBaseEn = props.getProperty(p + "telemetryBaseEn");
-		String telBaseFav = props.getProperty(p + "telemetryBaseFav");
-		String telLocEn = props.getProperty(p + "telemetryLocEn");
-		String telLocFav = props.getProperty(p + "telemetryLocFav");
-		String telEnvEn = props.getProperty(p + "telemetryEnvEn");
-		String telEnvFav = props.getProperty(p + "telemetryEnvFav");
-		String advertLocPolicyStr = props.getProperty(p + "advertLocPolicy");
+		String telBaseEn = props.getProperty(t + "baseEn");
+		String telBaseFav = props.getProperty(t + "baseFav");
+		String telLocEn = props.getProperty(t + "locEn");
+		String telLocFav = props.getProperty(t + "locFav");
+		String telEnvEn = props.getProperty(t + "envEn");
+		String telEnvFav = props.getProperty(t + "envFav");
+		String advertLocPolicyStr = props.getProperty(a + "locPolicy");
 		String multiAcksStr = props.getProperty(p + "multiAcks");
 		setOtherParams(manualAdd != null ? Boolean.parseBoolean(manualAdd) : null,
 				telBaseEn != null ? Boolean.parseBoolean(telBaseEn) : null,

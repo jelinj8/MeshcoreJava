@@ -54,10 +54,20 @@ public abstract class Frame {
 
 	public abstract boolean is(FrameType type);
 
+	/**
+	 * check if the frame is of specified type
+	 */
 	public boolean is(byte type) {
 		return getTypeCode() == type;
 	}
 
+	/**
+	 * Frame factory from binary data
+	 * 
+	 * @param source
+	 * @param data
+	 * @return
+	 */
 	public static Frame fromData(MeshcoreCompanion source, byte[] data) {
 		if (data == null || data.length < 1)
 			return null;
@@ -162,5 +172,10 @@ public abstract class Frame {
 		}
 	}
 
+	/**
+	 * convert to binary representation
+	 * 
+	 * @return
+	 */
 	public abstract byte[] getBytes();
 }

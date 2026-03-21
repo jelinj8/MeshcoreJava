@@ -8,6 +8,20 @@ public abstract class ResponseFrame extends Frame {
 	protected byte[] data;
 	protected final MeshcoreCompanion companion;
 
+	/**
+	 * get a companion that produced the frame
+	 * 
+	 * @return
+	 */
+	public MeshcoreCompanion getCompanion() {
+		return companion;
+	}
+
+	/**
+	 * raw frame data
+	 * 
+	 * @return
+	 */
 	public byte[] getData() {
 		return data;
 	}
@@ -18,12 +32,24 @@ public abstract class ResponseFrame extends Frame {
 		this.receivedAt = System.currentTimeMillis();
 	}
 
+	/**
+	 * expected type of async response
+	 * 
+	 * @return
+	 */
 	public abstract ResponseFrameType getFrameType();
 
+	/**
+	 * check if a ResponseFrameType is expected as a response to this frame
+	 * 
+	 * @param type
+	 * @return
+	 */
 	public boolean is(ResponseFrameType type) {
 		return getFrameType().equals(type);
 	}
 
+	@Override
 	public boolean is(FrameType type) {
 		return FrameType.RESPONSE.equals(type);
 	}
@@ -43,6 +69,10 @@ public abstract class ResponseFrame extends Frame {
 		return String.format("%s UNPARSED: %s", getFrameType(), MeshcoreUtils.hex(data));
 	}
 
+	/**
+	 * get timestamp when the frame was received/created
+	 * @return
+	 */
 	public long getReceivedAt() {
 		return receivedAt;
 	}

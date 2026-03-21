@@ -228,6 +228,16 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 		}
 	}
 
+	/**
+	 * register a listener. Multiple listeners for the same class can be registered.
+	 * 
+	 * @param <T>
+	 * @param frameClass key for list to which the listener will be added. Frames
+	 *                   assignable to the class will be passed to all listeners in
+	 *                   that list.
+	 * @param listener   listener to notify, can be registered in multiple lists
+	 *                   (when more generic)
+	 */
 	public <T extends Frame> void registerFrameListener(Class<T> frameClass, FrameListener<? super T> listener) {
 		frameListeners.register(frameClass, listener);
 	}
