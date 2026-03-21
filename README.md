@@ -1,7 +1,7 @@
 This is an implemetation of Meshcore Companion serial interface (https://github.com/meshcore-dev/MeshCore/tree/main/examples/companion_radio). It allows full control of the companion (all communication frame types are implemented) currently via USB.
 Firmware compatibility v1.14 (including multibyte routing).
 
-Current version is written by me (reverse-engeneering of the C++ firmware source) with some help from AI (mainly sanity checking, decryption and cleanup).
+Current version is written by me (reverse-engeneering of the C++ firmware source), later with help from AI (mainly sanity checking, decryption, cleanup and mechanical tasks). Fortunately the AI still needs someone who knows what he wants and directs it, it makes a terrible mess if not guided trough poorly documented areas.
 
 Everything should be compatible with JDK1.8. It contradicts the "think embedded" suggestion at Meshcore's GitHub as it is a higher level language and the main idea is to keep it maintainable and in sync with the firmware (that is why there is the Frame type hierarchy).
 
