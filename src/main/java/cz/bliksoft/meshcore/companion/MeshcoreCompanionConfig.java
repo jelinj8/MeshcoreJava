@@ -379,6 +379,15 @@ public class MeshcoreCompanionConfig {
 		}
 	}
 
+	public void setChannel(int id, String name, String keyHex)
+			throws IOException, TimeoutException, InterruptedException {
+		setChannel(id, name, MeshcoreUtils.fromHex(keyHex));
+	}
+
+	public int setChannel(String name, String keyHex) throws IOException, TimeoutException, InterruptedException {
+		return setChannel(name, MeshcoreUtils.fromHex(keyHex));
+	}
+
 	public ChannelInfo getChannel(int id) {
 		return channels.get(id);
 	}

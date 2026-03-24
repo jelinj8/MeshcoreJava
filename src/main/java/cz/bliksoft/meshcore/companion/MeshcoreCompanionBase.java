@@ -9,6 +9,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,7 +73,12 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	/**
 	 * indicator of running reader loop
 	 */
-	protected volatile boolean running = false;
+	protected volatile AtomicBoolean running = new AtomicBoolean();
+
+	/**
+	 * indicator of a device being ready to process commands
+	 */
+	protected volatile AtomicBoolean available = new AtomicBoolean();
 
 	public String getName() {
 		return name;
@@ -174,21 +180,50 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	}
 
 	/**
-	 * wait for event loop to start up
+	 * Wait for event loop to start up, mainly for internal use.
 	 * 
 	 * @param timeoutMs
 	 * @throws TimeoutException
 	 * @throws InterruptedException
 	 */
-	public void awaitRunning(long timeoutMs) throws TimeoutException, InterruptedException {
+	protected void awaitRunning(long timeoutMs) throws TimeoutException, InterruptedException {
 		long deadline = System.currentTimeMillis() + timeoutMs;
 		while (System.currentTimeMillis() < deadline) {
-			if (running) {
+			if (running.get()) {
 				return;
 			}
 			Thread.sleep(50);
 		}
 		throw new TimeoutException("Meshcore loop not running in time");
+	}
+
+	/**
+	 * Wait for event loop to start up and finish initialization (after each
+	 * reconnect). This is the way to check for device OK on startup. 
+	 * 
+	 * @param timeoutMs
+	 * @throws TimeoutException
+	 * @throws InterruptedException
+	 */
+	public void awaitAvailable(long timeoutMs) throws TimeoutException, InterruptedException {
+		long deadline = System.currentTimeMillis() + timeoutMs;
+		while (System.currentTimeMillis() < deadline) {
+			if (available.get()) {
+				return;
+			}
+			Thread.sleep(50);
+		}
+		throw new TimeoutException("Meshcore device not available in time");
+	}
+
+	/**
+	 * check if the Meshcore companion device is connected and available to accept
+	 * commands (initialized)
+	 * 
+	 * @return
+	 */
+	public boolean isAvailable() {
+		return available.get();
 	}
 
 	/**
@@ -202,21 +237,22 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	protected void runLoop() throws IOException, TimeoutException, InterruptedException {
 		eventExecutor.execute(() -> {
 			try {
-				running = true;
+				running.set(true);
 				deviceHandshake();
 			} catch (IOException | TimeoutException | InterruptedException e) {
-				running = false;
+				running.set(false);
 				log.severe("Failed to initialize Mesh companion device");
 			}
 		});
 		try {
 			// wait for processing of device handshake
-			awaitRunning(1000l);
+			awaitRunning(2000l);
 			eventExecutor.execute(() -> {
 				try {
 					deviceInit();
+					available.set(true);
 				} catch (IOException e) {
-					running = false;
+					available.set(false);
 					log.severe("Failed to initialize Mesh companion device");
 				}
 			});
@@ -229,7 +265,7 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 		} catch (TimeoutException to) {
 			log.severe("Mesh device not initialized in time.");
 		} finally {
-			running = false;
+			running.set(false);
 		}
 	}
 
@@ -253,7 +289,7 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	}
 
 	/**
-	 * initial protocol handshake
+	 * initial protocol handshake, loop not yet running
 	 * 
 	 * @throws IOException
 	 * @throws InterruptedException
@@ -265,7 +301,8 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	}
 
 	/**
-	 * additional initialization in online mode (e.g. set time)
+	 * additional initialization in online mode (e.g. set time), this is the place
+	 * to initialize after connection.
 	 * 
 	 * @throws IOException
 	 */
@@ -338,7 +375,7 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 		if (readerThread == null) {
 			throw new IllegalStateException("readerThread not set!");
 		}
-		if (!readerThread.isAlive() || !running) {
+		if (!readerThread.isAlive() || !running.get()) {
 			throw new IllegalStateException("Current readerThread or reader loop is not running!");
 		}
 		if (Thread.currentThread() == readerThread) {
