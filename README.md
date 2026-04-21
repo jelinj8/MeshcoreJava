@@ -1,7 +1,7 @@
-This is an implemetation of Meshcore Companion serial interface (https://github.com/meshcore-dev/MeshCore/tree/main/examples/companion_radio). It allows full control of the companion (all communication frame types are implemented) currently via USB.
-Firmware compatibility v1.14 (including multibyte routing).
+This is an implementation of the [MeshCore companion serial interface](https://github.com/meshcore-dev/MeshCore/tree/main/examples/companion_radio). It allows full control of the companion (all communication frame types are implemented) currently via USB.
+Firmware compatibility v1.15.0 (including multibyte routing).
 
-Current version is written by me (reverse-engeneering of the C++ firmware source), later with help from AI (mainly sanity checking, decryption, cleanup and mechanical tasks). Fortunately the AI still needs someone who knows what he wants and directs it, it makes a terrible mess if not guided trough poorly documented areas.
+Initial version was written by me (reverse-engineering of the C++ firmware source), later with help from AI (mainly sanity checking, decryption, cleanup and mechanical tasks). Now I'm using it to keep in sync with firmware updates. Fortunately the AI still needs someone who knows what they want and directs it, but it is gaining traction.
 
 Everything should be compatible with JDK1.8. It contradicts the "think embedded" suggestion at Meshcore's GitHub as it is a higher level language and the main idea is to keep it maintainable and in sync with the firmware (that is why there is the Frame type hierarchy).
 
@@ -19,7 +19,7 @@ More detailed logging of air frames can be enabled by setting
 LogRXDataPush.isDecodeRaw(true);
 
 // parse also transmitted frames content - that provides also routing hops and deciphering of Group and Unicast text frames where possible (using configured channels for Groups and own key for unicast messages where the recipient is the companion).
-LogRXDataPush.isDecodePaylodad(true);
+LogRXDataPush.isDecodePayload(true);
 
 // detailed logging of path hops with contacts identified by prefixes, with multiple values where not unique.
 LogRXDataPush.setTranslatePath(true);
@@ -31,7 +31,7 @@ This is a simple usage example:
 public class SimpleMeshcoreCompanion extends SerialMeshcoreCompanion {
 	Logger log = LogManager.getLogger();
 
-	public BSAppMeshcore(FileObject definition) throws IOException {
+	public SimpleMeshcoreCompanion(FileObject definition) throws IOException {
 		super(definition.getAttribute("name", definition.getName()),
 				Objects.requireNonNull(definition.getAttribute("com"), "com"), definition.getInt("baud", 115200));
 

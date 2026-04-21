@@ -81,7 +81,16 @@ public class FrameConstants {
 		CMD_SET_AUTOADD_CONFIG((byte) 58), // 0x3A / 58
 		CMD_GET_AUTOADD_CONFIG((byte) 59), // 0x3B / 59
 		CMD_GET_ALLOWED_REPEAT_FREQ((byte) 60), // 0x3C / 60
-		CMD_SET_PATH_HASH_MODE((byte) 61); // 0x3D / 61
+		CMD_SET_PATH_HASH_MODE((byte) 61), // 0x3D / 61
+
+		/** v1.15+ send binary datagram to a group channel */
+		CMD_SEND_CHANNEL_DATA((byte) 62), // 0x3E / 62
+
+		/** v1.15+ set/clear persisted default flood scope (name+key) */
+		CMD_SET_DEFAULT_FLOOD_SCOPE((byte) 63), // 0x3F / 63
+
+		/** v1.15+ get persisted default flood scope */
+		CMD_GET_DEFAULT_FLOOD_SCOPE((byte) 64); // 0x40 / 64
 
 		private final byte code;
 
@@ -233,6 +242,12 @@ public class FrameConstants {
 
 		RESP_AUTOADD_CONFIG((byte) 25), // 0x19 / 25
 		RESP_ALLOWED_REPEAT_FREQ((byte) 26), // 0x1A / 26
+
+		/** v1.15+ reply to CMD_SYNC_NEXT_MESSAGE when channel data is queued */
+		RESP_CHANNEL_DATA_RECV((byte) 27), // 0x1B / 27
+
+		/** v1.15+ reply to CMD_GET_DEFAULT_FLOOD_SCOPE */
+		RESP_DEFAULT_FLOOD_SCOPE((byte) 28), // 0x1C / 28
 
 		// PUSH messages
 

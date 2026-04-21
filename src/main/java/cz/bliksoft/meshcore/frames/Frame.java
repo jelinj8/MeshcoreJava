@@ -23,8 +23,10 @@ import cz.bliksoft.meshcore.frames.resp.AdvertPath;
 import cz.bliksoft.meshcore.frames.resp.AllowedRepeatFreq;
 import cz.bliksoft.meshcore.frames.resp.AutoaddConfig;
 import cz.bliksoft.meshcore.frames.resp.BattAndStorage;
+import cz.bliksoft.meshcore.frames.resp.ChannelDataRecv;
 import cz.bliksoft.meshcore.frames.resp.ChannelInfo;
 import cz.bliksoft.meshcore.frames.resp.ChannelMsgRecv;
+import cz.bliksoft.meshcore.frames.resp.DefaultFloodScope;
 import cz.bliksoft.meshcore.frames.resp.Contact;
 import cz.bliksoft.meshcore.frames.resp.ContactMsgRecv;
 import cz.bliksoft.meshcore.frames.resp.ContactsStart;
@@ -83,6 +85,10 @@ public abstract class Frame {
 			return new AllowedRepeatFreq(source, data);
 		case RESP_AUTOADD_CONFIG:
 			return new AutoaddConfig(source, data);
+		case RESP_CHANNEL_DATA_RECV:
+			return new ChannelDataRecv(source, data);
+		case RESP_DEFAULT_FLOOD_SCOPE:
+			return new DefaultFloodScope(source, data);
 		case RESP_BATT_AND_STORAGE:
 			return new BattAndStorage(source, data);
 		case PUSH_BINARY_RESPONSE:

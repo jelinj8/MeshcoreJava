@@ -45,6 +45,8 @@ import cz.bliksoft.meshcore.frames.cmd.CmdSetChannel;
 import cz.bliksoft.meshcore.frames.cmd.CmdSetCustomVar;
 import cz.bliksoft.meshcore.frames.cmd.CmdSetDevicePin;
 import cz.bliksoft.meshcore.frames.cmd.CmdSetDeviceTime;
+import cz.bliksoft.meshcore.frames.cmd.CmdGetDefaultFloodScope;
+import cz.bliksoft.meshcore.frames.cmd.CmdSetDefaultFloodScope;
 import cz.bliksoft.meshcore.frames.cmd.CmdSetFloodScope;
 import cz.bliksoft.meshcore.frames.cmd.CmdSetOtherParams;
 import cz.bliksoft.meshcore.frames.cmd.CmdSetPathHashMode;
@@ -69,6 +71,7 @@ import cz.bliksoft.meshcore.frames.resp.DeviceInfo;
 import cz.bliksoft.meshcore.frames.resp.EndOfContacts;
 import cz.bliksoft.meshcore.frames.resp.Error;
 import cz.bliksoft.meshcore.frames.resp.ExportContact;
+import cz.bliksoft.meshcore.frames.resp.DefaultFloodScope;
 import cz.bliksoft.meshcore.frames.resp.Ok;
 import cz.bliksoft.meshcore.frames.resp.PrivateKey;
 import cz.bliksoft.meshcore.frames.resp.SelfInfo;
@@ -753,6 +756,23 @@ public class MeshcoreCompanionConfig {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdSetFloodScope(scope), defaultGetTimeout);
 		if (resp instanceof Error)
 			throw new CompanionErrorException(resp.toString());
+	}
+
+	/** Set the persisted default flood scope. Pass null for both args to clear. */
+	public void setDefaultFloodScope(String scopeName, byte[] scopeKey16)
+			throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = companion.sendFrameWithResult(new CmdSetDefaultFloodScope(scopeName, scopeKey16),
+				defaultGetTimeout);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+	}
+
+	/** Get the persisted default flood scope, or null scope if none is set. */
+	public DefaultFloodScope getDefaultFloodScope() throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = companion.sendFrameWithResult(new CmdGetDefaultFloodScope(), defaultGetTimeout);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (DefaultFloodScope) resp;
 	}
 
 	public Stats getStats(StatsCommandFrameSubtype subtype) throws IOException, TimeoutException, InterruptedException {

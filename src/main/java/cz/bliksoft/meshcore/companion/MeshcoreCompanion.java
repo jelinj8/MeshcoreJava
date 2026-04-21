@@ -23,6 +23,7 @@ import cz.bliksoft.meshcore.frames.cmd.CmdLogout;
 import cz.bliksoft.meshcore.frames.cmd.CmdReboot;
 import cz.bliksoft.meshcore.frames.cmd.CmdSendAnonReq;
 import cz.bliksoft.meshcore.frames.cmd.CmdSendBinaryReq;
+import cz.bliksoft.meshcore.frames.cmd.CmdSendChannelData;
 import cz.bliksoft.meshcore.frames.cmd.CmdSendChannelTxtMessage;
 import cz.bliksoft.meshcore.frames.cmd.CmdSendControlData;
 import cz.bliksoft.meshcore.frames.cmd.CmdSendLogin;
@@ -401,6 +402,23 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 		if (resp instanceof Error)
 			throw new CompanionErrorException(resp.toString());
 		return resp;
+	}
+
+	/**
+	 * Send a binary datagram to a group channel. Use pathLen=0xFF for flood.
+	 *
+	 * @param channelIdx  index into device channel table
+	 * @param pathLen     0xFF for flood, otherwise encoded hop count
+	 * @param encodedPath encoded path bytes (null when pathLen == 0xFF)
+	 * @param dataType    16-bit application-defined data type
+	 * @param payload     binary payload
+	 */
+	public void sendChannelData(int channelIdx, byte pathLen, byte[] encodedPath, int dataType, byte[] payload)
+			throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(
+				new CmdSendChannelData(channelIdx, pathLen, encodedPath, dataType, payload), DEFAULT_CMD_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
 	}
 
 	/**
