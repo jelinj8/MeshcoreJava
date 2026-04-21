@@ -19,7 +19,7 @@ public class CmdAppStart extends CommandFrame {
 		// type
 		bb.put(getFrameType().code());
 		// [1..7] reserved
-		bb.put(new byte[6]);
+		bb.put(new byte[7]);
 		// app name
 		bb.put(appName, 40);
 

@@ -141,8 +141,12 @@ public class MeshcoreCompanionConfig {
 					ContactDeletedPush d = (ContactDeletedPush) frame;
 					String pubkey = MeshcoreUtils.hex(d.getPubkey());
 					Contact c = contacts.remove(pubkey);
-					c.saved = false;
-					contactsArchive.put(pubkey, c);
+					if (c != null) {
+						c.saved = false;
+						contactsArchive.put(pubkey, c);
+					} else {
+						log.warning(String.format("Removed contact %s not found!", pubkey));
+					}
 				}
 					break;
 				case PUSH_CONTACTS_FULL:

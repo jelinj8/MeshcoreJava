@@ -40,8 +40,8 @@ public class OtaUnicastFrame extends OtaFrame {
 	/** 32-byte ECDH shared secret used for decryption, or {@code null}. */
 	public byte[] decryptedSecret = null;
 
-	OtaUnicastFrame(MeshcoreCompanion source, OtaRouteType route, OtaPayloadType payloadType, int ver, int tc0, int tc1, int hashSize,
-			byte[] path, byte[] payloadBytes) {
+	OtaUnicastFrame(MeshcoreCompanion source, OtaRouteType route, OtaPayloadType payloadType, int ver, int tc0, int tc1,
+			int hashSize, byte[] path, byte[] payloadBytes) {
 		super(source, route, payloadType, ver, tc0, tc1, hashSize, path, payloadBytes);
 		if (payloadBytes.length >= 2) {
 			destHash = payloadBytes[0] & 0xFF;
@@ -57,8 +57,8 @@ public class OtaUnicastFrame extends OtaFrame {
 	/**
 	 * Try to decrypt this TXT_MSG payload using the given sender public key and our
 	 * private key. On success the decrypted data is stored in
-	 * {@link #decryptedTimestamp}, {@link #decryptedText}, and
-	 * {@link #decryptedSecret}.
+	 * {@link #decryptedTimestamp}, {@link #decryptedText},
+	 * {@link #decryptedSender}, and {@link #decryptedSecret}.
 	 *
 	 * <p>
 	 * Only meaningful when {@link #payloadType} is {@link OtaPayloadType#TXT_MSG}.
@@ -128,6 +128,7 @@ public class OtaUnicastFrame extends OtaFrame {
 							: String.format("[%s:%s]%s", MeshcoreUtils.hexPrefix6(decryptedSender.getPubkey()),
 									decryptedSender.getName(), decryptedText));
 		else
-			return String.format("%s src=%02x dest=%02x enc=%dB", routingPrefix(), srcHash, destHash, encLen);
+			return String.format("%s src=%02x dest=%02x enc=%dB data=%s", routingPrefix(), srcHash, destHash, encLen,
+					MeshcoreUtils.hex(payloadBytes));
 	}
 }

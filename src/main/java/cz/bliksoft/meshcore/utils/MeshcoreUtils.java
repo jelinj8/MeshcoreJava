@@ -52,6 +52,12 @@ public class MeshcoreUtils {
 		}
 		return sb.toString();
 	}
+	
+	public static byte[] prefix6(byte[] pubKey32) {
+		byte[] p = new byte[6];
+		System.arraycopy(pubKey32, 0, p, 0, 6);
+		return p;
+	}
 
 	public static byte[] fixedNullTerm(String s, int len) {
 		byte[] out = new byte[len];
