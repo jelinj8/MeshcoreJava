@@ -38,18 +38,27 @@ import cz.bliksoft.meshcore.frames.cmd.CmdSignData;
 import cz.bliksoft.meshcore.frames.cmd.CmdSignFinish;
 import cz.bliksoft.meshcore.frames.cmd.CmdSignStart;
 import cz.bliksoft.meshcore.frames.cmd.CmdSyncNext;
-import cz.bliksoft.meshcore.frames.push.MessageWaitingPush;
-import cz.bliksoft.meshcore.frames.resp.Error;
+import cz.bliksoft.meshcore.frames.group.MessageFrameGroup;
 import cz.bliksoft.meshcore.frames.push.BinaryResponsePush;
+import cz.bliksoft.meshcore.frames.push.LogRXDataPush;
+import cz.bliksoft.meshcore.frames.push.MessageWaitingPush;
 import cz.bliksoft.meshcore.frames.push.PathDiscoveryResponsePush;
 import cz.bliksoft.meshcore.frames.push.SendConfirmedPush;
 import cz.bliksoft.meshcore.frames.push.StatusResponsePush;
 import cz.bliksoft.meshcore.frames.push.TelemetryResponsePush;
 import cz.bliksoft.meshcore.frames.push.TraceDataPush;
+import cz.bliksoft.meshcore.frames.resp.ChannelInfo;
+import cz.bliksoft.meshcore.frames.resp.ChannelMsgRecv;
 import cz.bliksoft.meshcore.frames.resp.Contact;
+import cz.bliksoft.meshcore.frames.resp.ContactMsgRecv;
+import cz.bliksoft.meshcore.frames.resp.Error;
+import cz.bliksoft.meshcore.frames.resp.SelfInfo;
 import cz.bliksoft.meshcore.frames.resp.Sent;
-import cz.bliksoft.meshcore.frames.resp.Signature;
 import cz.bliksoft.meshcore.frames.resp.SignStart;
+import cz.bliksoft.meshcore.frames.resp.Signature;
+import cz.bliksoft.meshcore.otaframe.OtaFrame;
+import cz.bliksoft.meshcore.otaframe.OtaGroupFrame;
+import cz.bliksoft.meshcore.otaframe.OtaUnicastFrame;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
@@ -71,6 +80,18 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	 * registry for listeners that will be notified about frame received from device
 	 */
 	private FrameListenerRegistry frameListeners = new FrameListenerRegistry();
+
+	private volatile boolean logFramePairing = false;
+	private static final int LOG_FRAME_BUFFER_SIZE = 10;
+	private final java.util.ArrayDeque<LogRXDataPush> recentLogFrames = new java.util.ArrayDeque<>();
+
+	public void setLogFramePairing(boolean enabled) {
+		this.logFramePairing = enabled;
+	}
+
+	public boolean isLogFramePairing() {
+		return logFramePairing;
+	}
 
 	private final java.util.concurrent.ConcurrentHashMap<String, CompletableFuture<ResponseFrame>> responseWaiters = new java.util.concurrent.ConcurrentHashMap<>();
 	private final java.util.concurrent.ConcurrentHashMap<String, ResponseFrame> recentResponses = new java.util.concurrent.ConcurrentHashMap<>();
@@ -173,6 +194,17 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 
 	@Override
 	protected boolean dispatchFrame(ResponseFrame frame) throws IOException {
+		if (logFramePairing) {
+			if (frame instanceof LogRXDataPush) {
+				LogRXDataPush lf = (LogRXDataPush) frame;
+				lf.getOtaFrame(); // eagerly parse OTA frame on reader thread
+				recentLogFrames.addLast(lf);
+				while (recentLogFrames.size() > LOG_FRAME_BUFFER_SIZE)
+					recentLogFrames.removeFirst();
+			} else if (frame instanceof MessageFrameGroup) {
+				pairLogFrame((MessageFrameGroup) frame);
+			}
+		}
 		// blocking calls
 		if (!super.dispatchFrame(frame)) {
 			// check waiting futures
@@ -187,6 +219,46 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 			return true; // consumed by sendAndAwait
 
 		return false; // not consumed
+	}
+
+	private void pairLogFrame(MessageFrameGroup msg) {
+		if (msg instanceof ContactMsgRecv) {
+			int srcHash = ((ContactMsgRecv) msg).getFrom6()[0] & 0xFF;
+			SelfInfo self = getSelfInfo();
+			int destHash = (self != null) ? (self.getPubkey()[0] & 0xFF) : -1;
+			java.util.Iterator<LogRXDataPush> it = recentLogFrames.descendingIterator();
+			while (it.hasNext()) {
+				LogRXDataPush lf = it.next();
+				OtaFrame ota = lf.getOtaFrame();
+				if (ota instanceof OtaUnicastFrame) {
+					OtaUnicastFrame uni = (OtaUnicastFrame) ota;
+					if (uni.srcHash == srcHash && (destHash == -1 || uni.destHash == destHash)) {
+						msg.setPairedLogFrame(lf);
+						it.remove();
+						return;
+					}
+				}
+			}
+		} else if (msg instanceof ChannelMsgRecv) {
+			int chIdx = ((ChannelMsgRecv) msg).getChannelIdx();
+			ChannelInfo ch = getConfig().getChannel(chIdx);
+			if (ch == null)
+				return;
+			int chHash = ch.getChannelHash();
+			java.util.Iterator<LogRXDataPush> it = recentLogFrames.descendingIterator();
+			while (it.hasNext()) {
+				LogRXDataPush lf = it.next();
+				OtaFrame ota = lf.getOtaFrame();
+				if (ota instanceof OtaGroupFrame) {
+					OtaGroupFrame grp = (OtaGroupFrame) ota;
+					if (grp.channelHash == chHash) {
+						msg.setPairedLogFrame(lf);
+						it.remove();
+						return;
+					}
+				}
+			}
+		}
 	}
 
 	/**

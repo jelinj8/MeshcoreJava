@@ -34,7 +34,7 @@ public class CmdSetDefaultFloodScope extends CommandFrame {
 		bb.put(getTypeCode());
 		if (scopeName != null && scopeKey != null) {
 			bb.put(scopeName, SCOPE_NAME_LEN);
-			bb.put(scopeKey);
+			bb.put(scopeKey, SCOPE_KEY_LEN);
 		}
 		// length 1 (command byte only) signals clear
 		return bb.toArray();
