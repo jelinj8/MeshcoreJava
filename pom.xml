@@ -55,11 +55,33 @@
 			<scope>provided</scope>
 		</dependency>-->
 
-		<!-- https://github.com/Fazecast/jSerialComm -->
+		<!--
+			Serial transport (SerialMeshcoreCompanion).
+			Provided scope: required only when using USB/serial; not needed for BLE-only usage.
+			https://github.com/Fazecast/jSerialComm
+		-->
 		<dependency>
 			<groupId>com.fazecast</groupId>
 			<artifactId>jSerialComm</artifactId>
 			<version>[2.0.0,3.0.0)</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<!--
+			BLE transport (BleMeshcoreCompanion) — cross-platform via SimpleBLE.
+			Provided scope: required only when using BLE; not needed for serial-only usage.
+			Not on Maven Central. Download simplejavable-v0.12.1.jar from:
+			  https://github.com/simpleble/simpleble/releases/tag/v0.12.1
+			Place it at lib/simplejavable.jar, then install to local repo:
+			  mvn install:install-file -Dfile=lib/simplejavable.jar \
+			      -DgroupId=org.simplejavable -DartifactId=simplejavable \
+			      -Dversion=0.12.1 -Dpackaging=jar
+		-->
+		<dependency>
+			<groupId>org.simplejavable</groupId>
+			<artifactId>simplejavable</artifactId>
+			<version>0.12.1</version>
+			<scope>provided</scope>
 		</dependency>
 
 	</dependencies>

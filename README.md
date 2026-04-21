@@ -8,7 +8,68 @@ Everything should be compatible with JDK1.8. It contradicts the "think embedded"
 Currently the only dependency is com.fazecast jSerialComm for USB virtual COM and Log4J. When BLE implementation is added, I plan to keep the serial interface and the BLE implementation as separate dependencies (to add just what is needed, there will be probably also a separate BLE version for Windows and Linux as there is no multiplatform Java BLE library).
 That should enable this to be used even in Android apps (to finally make an open-source companion app). I'm not an Android developer, I'm going to make a PC (JavaFX based) companion eventually + use this as an API to integrate the companion in a server APP.
 
-BLE implementation requires just implementing a connection class as the frame protocol is common, but it requires finding a Java library to do that and I didn't have an opportunity and motivation for that yet. (See SerialMeshcoreCompanion for what is needed).
+BLE is implemented via `BleMeshcoreCompanion`, which tunnels the same byte-stream protocol over the Nordic UART Service (NUS). Both transports are `provided`-scope dependencies, so you add only what you need.
+
+## Dependencies
+
+Both transport dependencies are `provided` — add only the one(s) you use to your project:
+
+**Serial (USB):**
+```xml
+<dependency>
+    <groupId>com.fazecast</groupId>
+    <artifactId>jSerialComm</artifactId>
+    <version>[2.0.0,3.0.0)</version>
+</dependency>
+```
+
+**BLE:**
+```xml
+<dependency>
+    <groupId>org.simplejavable</groupId>
+    <artifactId>simplejavable</artifactId>
+    <version>0.12.1</version>
+</dependency>
+```
+
+`simplejavable` is not on Maven Central. Download `simplejavable-v0.12.1.jar` from the [SimpleBLE GitHub releases](https://github.com/simpleble/simpleble/releases/tag/v0.12.1) and install it to your local Maven repo once:
+
+```bash
+mvn install:install-file -Dfile=simplejavable-v0.12.1.jar \
+    -DgroupId=org.simplejavable -DartifactId=simplejavable \
+    -Dversion=0.12.1 -Dpackaging=jar
+```
+
+You also need the platform native library on `java.library.path` at runtime (from the same release page):
+
+| Platform | File |
+|----------|------|
+| Linux x64 | `libsimplejavable.so` (from `libsimpleble_linux-x64.zip`) |
+| Windows x64 | `libsimplejavable.dll` (from `libsimpleble_windows-x64.zip`) |
+| macOS | `libsimplejavable.dylib` |
+
+Example — run with native lib next to the JAR:
+```bash
+java -Djava.library.path=. -jar myapp.jar
+```
+
+## BLE usage
+
+First scan to find the device address:
+```java
+BleMeshcoreCompanion.scanForNusDevices(5000).forEach(System.out::println);
+// prints: "AA:BB:CC:DD:EE:FF (MeshCore)"
+```
+
+Then connect the same way as serial:
+```java
+BleMeshcoreCompanion companion = new BleMeshcoreCompanion("myNode", "AA:BB:CC:DD:EE:FF");
+companion.awaitAvailable(10_000);
+// use companion exactly like SerialMeshcoreCompanion from here
+companion.close();
+```
+
+`BleMeshcoreCompanion` expects the radio firmware to expose the [Nordic UART Service](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/libraries/bluetooth_services/services/nus.html) (NUS). The UUIDs used are the standard ones (`6E400001...` / TX `6E400002...` / RX `6E400003...`); verify these against your firmware build before first use.
 
 All communication is logged (Log4J2 to cz.bliksoft.meshcore.companion.MeshcoreCompanion.DEV FINE).
 
