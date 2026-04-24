@@ -35,6 +35,7 @@ import cz.bliksoft.meshcore.frames.cmd.CmdGetChannel;
 import cz.bliksoft.meshcore.frames.cmd.CmdGetContactByKey;
 import cz.bliksoft.meshcore.frames.cmd.CmdGetContacts;
 import cz.bliksoft.meshcore.frames.cmd.CmdGetCustomVars;
+import cz.bliksoft.meshcore.frames.cmd.CmdGetDefaultFloodScope;
 import cz.bliksoft.meshcore.frames.cmd.CmdGetDeviceTime;
 import cz.bliksoft.meshcore.frames.cmd.CmdGetStats;
 import cz.bliksoft.meshcore.frames.cmd.CmdGetTuningParams;
@@ -47,10 +48,9 @@ import cz.bliksoft.meshcore.frames.cmd.CmdSetAdvertName;
 import cz.bliksoft.meshcore.frames.cmd.CmdSetAutoaddConfig;
 import cz.bliksoft.meshcore.frames.cmd.CmdSetChannel;
 import cz.bliksoft.meshcore.frames.cmd.CmdSetCustomVar;
+import cz.bliksoft.meshcore.frames.cmd.CmdSetDefaultFloodScope;
 import cz.bliksoft.meshcore.frames.cmd.CmdSetDevicePin;
 import cz.bliksoft.meshcore.frames.cmd.CmdSetDeviceTime;
-import cz.bliksoft.meshcore.frames.cmd.CmdGetDefaultFloodScope;
-import cz.bliksoft.meshcore.frames.cmd.CmdSetDefaultFloodScope;
 import cz.bliksoft.meshcore.frames.cmd.CmdSetFloodScope;
 import cz.bliksoft.meshcore.frames.cmd.CmdSetOtherParams;
 import cz.bliksoft.meshcore.frames.cmd.CmdSetPathHashMode;
@@ -61,7 +61,6 @@ import cz.bliksoft.meshcore.frames.cmd.CmdShareContact;
 import cz.bliksoft.meshcore.frames.group.ContactFrameGroup;
 import cz.bliksoft.meshcore.frames.push.AdvertPush;
 import cz.bliksoft.meshcore.frames.push.ContactDeletedPush;
-import cz.bliksoft.meshcore.frames.push.NewAdvertPush;
 import cz.bliksoft.meshcore.frames.push.PathUpdatedPush;
 import cz.bliksoft.meshcore.frames.resp.AdvertPath;
 import cz.bliksoft.meshcore.frames.resp.AutoaddConfig;
@@ -71,11 +70,11 @@ import cz.bliksoft.meshcore.frames.resp.Contact;
 import cz.bliksoft.meshcore.frames.resp.ContactsStart;
 import cz.bliksoft.meshcore.frames.resp.CurrTime;
 import cz.bliksoft.meshcore.frames.resp.CustomVars;
+import cz.bliksoft.meshcore.frames.resp.DefaultFloodScope;
 import cz.bliksoft.meshcore.frames.resp.DeviceInfo;
 import cz.bliksoft.meshcore.frames.resp.EndOfContacts;
 import cz.bliksoft.meshcore.frames.resp.Error;
 import cz.bliksoft.meshcore.frames.resp.ExportContact;
-import cz.bliksoft.meshcore.frames.resp.DefaultFloodScope;
 import cz.bliksoft.meshcore.frames.resp.Ok;
 import cz.bliksoft.meshcore.frames.resp.PrivateKey;
 import cz.bliksoft.meshcore.frames.resp.SelfInfo;
@@ -110,7 +109,8 @@ public class MeshcoreCompanionConfig {
 		tuningParams = null;
 	}
 
-	private Map<String, Contact> contacts = null;
+	private volatile Map<String, Contact> contacts = null;
+	private volatile Map<String, Contact> pendingContacts = null;
 	private Map<String, Contact> contactsArchive = new ConcurrentHashMap<>();
 
 	/**
@@ -121,6 +121,26 @@ public class MeshcoreCompanionConfig {
 	 */
 	public Map<String, Contact> getContactsArchive() {
 		return contactsArchive;
+	}
+
+	/**
+	 * Returns a snapshot of all currently saved contacts, or an empty list if the
+	 * initial sync has not completed yet.
+	 */
+	public List<Contact> getSavedContacts() {
+		if (contacts == null)
+			return Collections.emptyList();
+		return new ArrayList<>(contacts.values());
+	}
+
+	/**
+	 * Returns the timestamp of the last completed contacts sync, or {@code null} if
+	 * no sync has finished yet. A non-null value means the saved contacts map is
+	 * fully populated and new listeners will not receive the initial batch of
+	 * {@link ContactListener#onContactAdded} calls.
+	 */
+	public Long getLastContactsSync() {
+		return lastContactsSync;
 	}
 
 	private final List<ContactListener> contactListeners = new CopyOnWriteArrayList<>();
@@ -209,7 +229,8 @@ public class MeshcoreCompanionConfig {
 				case RESP_CONTACT: {
 					Contact c = (Contact) frame;
 					String pubkey = MeshcoreUtils.hex(c.getPubkey());
-					Contact prev = contacts.put(pubkey, c);
+					Map<String, Contact> target = pendingContacts != null ? pendingContacts : contacts;
+					Contact prev = target.put(pubkey, c);
 					contactsArchive.remove(pubkey);
 					if (prev == null)
 						fireContactAdded(c);
@@ -220,7 +241,9 @@ public class MeshcoreCompanionConfig {
 				case PUSH_CONTACT_DELETED: {
 					ContactDeletedPush d = (ContactDeletedPush) frame;
 					String pubkey = MeshcoreUtils.hex(d.getPubkey());
-					Contact c = contacts.remove(pubkey);
+					if (pendingContacts != null)
+						pendingContacts.remove(pubkey);
+					Contact c = contacts != null ? contacts.remove(pubkey) : null;
 					if (c != null) {
 						c.saved = false;
 						contactsArchive.put(pubkey, c);
@@ -245,17 +268,19 @@ public class MeshcoreCompanionConfig {
 					break;
 				case RESP_END_OF_CONTACTS: {
 					EndOfContacts eoc = (EndOfContacts) frame;
-					if (eoc.getLastUpdated() > 0)
-						lastContactsSync = eoc.getLastUpdated();
 
-					boolean mismatch = contacts.size() != expectedCount;
+					Map<String, Contact> synced = pendingContacts != null ? pendingContacts : contacts;
+					int syncedSize = synced != null ? synced.size() : 0;
+					boolean mismatch = syncedSize != expectedCount;
 					if (mismatch)
 						log.warning(
 								String.format("Contacts count mismatch (expected %d, got %d) — triggering full resync",
-										expectedCount, contacts.size()));
+										expectedCount, syncedSize));
 
 					if (mismatch || pendingFullResync) {
 						pendingFullResync = false;
+						lastContactsSync = null;
+						pendingContacts = null;
 						// syncContacts(true) creates a new contactsSyncFuture; let that
 						// complete it so awaitContactsSync callers keep waiting correctly.
 						try {
@@ -267,6 +292,13 @@ public class MeshcoreCompanionConfig {
 								f.complete(null);
 						}
 					} else {
+						// Atomic commit: replace the authoritative map and timestamp together
+						if (pendingContacts != null) {
+							contacts = pendingContacts;
+							pendingContacts = null;
+						}
+						if (eoc.getLastUpdated() > 0)
+							lastContactsSync = eoc.getLastUpdated();
 						CompletableFuture<Void> f = contactsSyncFuture;
 						if (f != null)
 							f.complete(null);
@@ -304,7 +336,8 @@ public class MeshcoreCompanionConfig {
 			if (resp instanceof Contact) {
 				Contact c = (Contact) resp;
 				String key = MeshcoreUtils.hex(c.getPubkey());
-				Contact prev = contacts.put(key, c);
+				Map<String, Contact> target = pendingContacts != null ? pendingContacts : contacts;
+				Contact prev = target.put(key, c);
 				contactsArchive.remove(key);
 				if (prev == null)
 					fireContactAdded(c);
@@ -323,7 +356,7 @@ public class MeshcoreCompanionConfig {
 		installSyncContacts();
 		if (full || lastContactsSync == null) {
 			lastContactsSync = null;
-			contacts = new ConcurrentHashMap<>();
+			pendingContacts = new ConcurrentHashMap<>();
 		}
 		contactsSyncFuture = new CompletableFuture<>();
 		companion.sendFrame(new CmdGetContacts(lastContactsSync));
