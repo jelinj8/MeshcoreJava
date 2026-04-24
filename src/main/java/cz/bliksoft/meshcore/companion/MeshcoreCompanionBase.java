@@ -199,7 +199,7 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 
 	/**
 	 * Wait for event loop to start up and finish initialization (after each
-	 * reconnect). This is the way to check for device OK on startup. 
+	 * reconnect). This is the way to check for device OK on startup.
 	 * 
 	 * @param timeoutMs
 	 * @throws TimeoutException
@@ -241,7 +241,7 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 				deviceHandshake();
 			} catch (IOException | TimeoutException | InterruptedException e) {
 				running.set(false);
-				log.severe("Failed to initialize Mesh companion device");
+				log.severe(String.format("Failed to initialize Mesh companion device: %s", e));
 			}
 		});
 		try {
@@ -253,7 +253,7 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 					available.set(true);
 				} catch (IOException e) {
 					available.set(false);
-					log.severe("Failed to initialize Mesh companion device");
+					log.severe(String.format("Failed to initialize Mesh companion device: %s", e));
 				}
 			});
 			while (!terminate && isConnected()) {

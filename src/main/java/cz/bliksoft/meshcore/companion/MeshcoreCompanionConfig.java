@@ -1135,9 +1135,13 @@ public class MeshcoreCompanionConfig {
 			return;
 		int idx = 0;
 		for (Contact c : contacts.values()) {
-			byte[] blob = exportContact(c.getPubkey());
-			props.setProperty(prefix + "." + idx + ".advertPacket", MeshcoreUtils.hex(blob));
-			idx++;
+			try {
+				byte[] blob = exportContact(c.getPubkey());
+				props.setProperty(prefix + "." + idx + ".advertPacket", MeshcoreUtils.hex(blob));
+				idx++;
+			} catch (CompanionErrorException e) {
+				log.warning("Skipping contact " + c.getName() + " during backup: " + e.getMessage());
+			}
 		}
 		props.setProperty(prefix + "s.count", Integer.toString(idx));
 	}

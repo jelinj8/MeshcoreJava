@@ -95,7 +95,10 @@ public class SerialMeshcoreCompanion extends MeshcoreCompanion {
 	@Override
 	public void close() {
 		super.close();
-		// close port
+		Thread t = readerThread;
+		if (t != null) {
+			t.interrupt();
+		}
 		closePortQuietly();
 	}
 
