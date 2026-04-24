@@ -10,7 +10,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -112,11 +116,79 @@ public class MeshcoreCompanionConfig {
 	/**
 	 * get list of unsaved contacts. Either removed from companion or PushAdvertNew
 	 * unsaved.
-	 * 
+	 *
 	 * @return
 	 */
 	public Map<String, Contact> getContactsArchive() {
 		return contactsArchive;
+	}
+
+	private final List<ContactListener> contactListeners = new CopyOnWriteArrayList<>();
+
+	public void addContactListener(ContactListener listener) {
+		contactListeners.add(listener);
+	}
+
+	public void removeContactListener(ContactListener listener) {
+		contactListeners.remove(listener);
+	}
+
+	private void fireContactAdded(Contact c) {
+		for (ContactListener l : contactListeners) {
+			try {
+				l.onContactAdded(c);
+			} catch (Exception ex) {
+				log.log(Level.WARNING, "ContactListener.onContactAdded threw", ex);
+			}
+		}
+	}
+
+	private void fireContactUpdated(Contact c) {
+		for (ContactListener l : contactListeners) {
+			try {
+				l.onContactUpdated(c);
+			} catch (Exception ex) {
+				log.log(Level.WARNING, "ContactListener.onContactUpdated threw", ex);
+			}
+		}
+	}
+
+	private void fireContactRemoved(Contact c) {
+		for (ContactListener l : contactListeners) {
+			try {
+				l.onContactRemoved(c);
+			} catch (Exception ex) {
+				log.log(Level.WARNING, "ContactListener.onContactRemoved threw", ex);
+			}
+		}
+	}
+
+	/**
+	 * Future completed when the current contacts sync finishes
+	 * (RESP_END_OF_CONTACTS).
+	 */
+	private volatile CompletableFuture<Void> contactsSyncFuture = null;
+
+	/**
+	 * Block until the current contacts sync completes. Must NOT be called from the
+	 * eventExecutor thread (e.g. from inside a frame listener) — doing so will
+	 * deadlock. Typically called right after {@link #syncContacts} from application
+	 * code.
+	 *
+	 * @param timeoutMs maximum wait in milliseconds
+	 * @throws TimeoutException     if sync did not complete in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
+	public void awaitContactsSync(long timeoutMs) throws TimeoutException, InterruptedException {
+		CompletableFuture<Void> f = contactsSyncFuture;
+		if (f == null || f.isDone())
+			return;
+		try {
+			f.get(timeoutMs, TimeUnit.MILLISECONDS);
+		} catch (ExecutionException ignored) {
+		} catch (java.util.concurrent.TimeoutException e) {
+			throw new TimeoutException("Contacts sync timed out after " + timeoutMs + "ms");
+		}
 	}
 
 	Long lastContactsSync = null;
@@ -129,6 +201,7 @@ public class MeshcoreCompanionConfig {
 		FrameListener<ContactFrameGroup> contactsListener = new FrameListener<ContactFrameGroup>() {
 
 			long expectedCount = 0;
+			boolean pendingFullResync = false;
 
 			@Override
 			public void onFrame(ContactFrameGroup frame) {
@@ -136,8 +209,12 @@ public class MeshcoreCompanionConfig {
 				case RESP_CONTACT: {
 					Contact c = (Contact) frame;
 					String pubkey = MeshcoreUtils.hex(c.getPubkey());
-					contacts.put(pubkey, c);
+					Contact prev = contacts.put(pubkey, c);
 					contactsArchive.remove(pubkey);
+					if (prev == null)
+						fireContactAdded(c);
+					else
+						fireContactUpdated(c);
 				}
 					break;
 				case PUSH_CONTACT_DELETED: {
@@ -147,20 +224,52 @@ public class MeshcoreCompanionConfig {
 					if (c != null) {
 						c.saved = false;
 						contactsArchive.put(pubkey, c);
+						fireContactRemoved(c);
 					} else {
 						log.warning(String.format("Removed contact %s not found!", pubkey));
 					}
 				}
 					break;
 				case PUSH_CONTACTS_FULL:
+					// Defer resync to after the current sync ends; if we are not inside
+					// a sync there is no upcoming RESP_END_OF_CONTACTS so trigger now.
+					pendingFullResync = true;
+					if (contactsSyncFuture == null || contactsSyncFuture.isDone()) {
+						pendingFullResync = false;
+						try {
+							syncContacts(true);
+						} catch (IOException e) {
+							log.log(Level.SEVERE, "Failed to resync after PUSH_CONTACTS_FULL", e);
+						}
+					}
 					break;
 				case RESP_END_OF_CONTACTS: {
 					EndOfContacts eoc = (EndOfContacts) frame;
 					if (eoc.getLastUpdated() > 0)
 						lastContactsSync = eoc.getLastUpdated();
 
-					if (contacts.size() != expectedCount) {
-						log.severe("Contacts count does not match!");
+					boolean mismatch = contacts.size() != expectedCount;
+					if (mismatch)
+						log.warning(
+								String.format("Contacts count mismatch (expected %d, got %d) — triggering full resync",
+										expectedCount, contacts.size()));
+
+					if (mismatch || pendingFullResync) {
+						pendingFullResync = false;
+						// syncContacts(true) creates a new contactsSyncFuture; let that
+						// complete it so awaitContactsSync callers keep waiting correctly.
+						try {
+							syncContacts(true);
+						} catch (IOException e) {
+							log.log(Level.SEVERE, "Failed to resync after contacts count mismatch", e);
+							CompletableFuture<Void> f = contactsSyncFuture;
+							if (f != null)
+								f.complete(null);
+						}
+					} else {
+						CompletableFuture<Void> f = contactsSyncFuture;
+						if (f != null)
+							f.complete(null);
 					}
 				}
 					break;
@@ -174,10 +283,11 @@ public class MeshcoreCompanionConfig {
 				case PUSH_ADVERT:
 					refetchContact(((AdvertPush) frame).getPubkey());
 					break;
-				case PUSH_NEW_ADVERT:
-					// Add contact to local DB without adding it to companion's storage
-					contactsArchive.put(MeshcoreUtils.hex(((NewAdvertPush) frame).getPubkey()),
-							new Contact(companion, frame.getBytes().clone()));
+				case PUSH_NEW_ADVERT: {
+					// Contact discovered over the air; stored in archive for packet analysis only
+					Contact newC = new Contact(companion, frame.getBytes().clone());
+					contactsArchive.put(MeshcoreUtils.hex(newC.getPubkey()), newC);
+				}
 					break;
 				default:
 					break;
@@ -190,12 +300,20 @@ public class MeshcoreCompanionConfig {
 
 	private void refetchContact(byte[] pubkey) {
 		try {
-			ResponseFrame resp = companion.sendFrameWithResult(new CmdGetContactByKey(pubkey), 2000l);
-			if (resp instanceof Error) {
+			ResponseFrame resp = companion.sendFrameWithResult(new CmdGetContactByKey(pubkey), 2000L);
+			if (resp instanceof Contact) {
+				Contact c = (Contact) resp;
+				String key = MeshcoreUtils.hex(c.getPubkey());
+				Contact prev = contacts.put(key, c);
+				contactsArchive.remove(key);
+				if (prev == null)
+					fireContactAdded(c);
+				else
+					fireContactUpdated(c);
+			} else if (resp instanceof Error) {
 				log.severe(String.format("Contact refetch error for %s: %s", MeshcoreUtils.hex(pubkey),
 						((Error) resp).getCode()));
 			}
-			// updated RESP_CONTACT is handled by contactsListener above
 		} catch (IOException | TimeoutException | InterruptedException e) {
 			log.log(Level.SEVERE, "Contact refetch exception", e);
 		}
@@ -207,6 +325,7 @@ public class MeshcoreCompanionConfig {
 			lastContactsSync = null;
 			contacts = new ConcurrentHashMap<>();
 		}
+		contactsSyncFuture = new CompletableFuture<>();
 		companion.sendFrame(new CmdGetContacts(lastContactsSync));
 	}
 
@@ -217,7 +336,7 @@ public class MeshcoreCompanionConfig {
 	 * @return
 	 */
 	public Contact getContact(String name) {
-		if (name == null || name.length() == 0)
+		if (name == null || name.length() == 0 || contacts == null)
 			return null;
 		for (Contact c : contacts.values()) {
 			if (name.equals(c.getName()))
@@ -233,7 +352,7 @@ public class MeshcoreCompanionConfig {
 	 * @return
 	 */
 	public Contact getContact(byte[] pubkey) {
-		if (pubkey == null || pubkey.length == 0)
+		if (pubkey == null || pubkey.length == 0 || contacts == null)
 			return null;
 		Contact first = null;
 		for (Contact c : contacts.values()) {
@@ -272,10 +391,11 @@ public class MeshcoreCompanionConfig {
 		if (pubkey == null || pubkey.length == 0)
 			return null;
 		List<Contact> result = new ArrayList<>();
-		for (Contact c : contacts.values()) {
-			if (MeshcoreUtils.isPrefix(pubkey, c.getPubkey()) && (type == null || c.getType() == type))
-				result.add(c);
-		}
+		if (contacts != null)
+			for (Contact c : contacts.values()) {
+				if (MeshcoreUtils.isPrefix(pubkey, c.getPubkey()) && (type == null || c.getType() == type))
+					result.add(c);
+			}
 		for (Contact c : contactsArchive.values()) {
 			if (MeshcoreUtils.isPrefix(pubkey, c.getPubkey()) && (type == null || c.getType() == type))
 				result.add(c);
