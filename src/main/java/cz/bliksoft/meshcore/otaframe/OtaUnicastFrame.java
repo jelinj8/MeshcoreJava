@@ -1,12 +1,12 @@
 package cz.bliksoft.meshcore.otaframe;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
 import cz.bliksoft.meshcore.frames.OtaConstants.OtaPayloadType;
 import cz.bliksoft.meshcore.frames.OtaConstants.OtaRouteType;
 import cz.bliksoft.meshcore.frames.resp.Contact;
+import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshCoreCrypto;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
@@ -43,10 +43,11 @@ public class OtaUnicastFrame extends OtaFrame {
 	OtaUnicastFrame(MeshcoreCompanion source, OtaRouteType route, OtaPayloadType payloadType, int ver, int tc0, int tc1,
 			int hashSize, byte[] path, byte[] payloadBytes) {
 		super(source, route, payloadType, ver, tc0, tc1, hashSize, path, payloadBytes);
-		if (payloadBytes.length >= 2) {
-			destHash = payloadBytes[0] & 0xFF;
-			srcHash = payloadBytes[1] & 0xFF;
-			macAndCipher = Arrays.copyOfRange(payloadBytes, 2, payloadBytes.length);
+		ByteReader br = new ByteReader(payloadBytes);
+		if (br.remaining() >= 2) {
+			destHash = br.readUnsignedByte();
+			srcHash = br.readUnsignedByte();
+			macAndCipher = br.readBytes();
 		} else {
 			destHash = -1;
 			srcHash = -1;

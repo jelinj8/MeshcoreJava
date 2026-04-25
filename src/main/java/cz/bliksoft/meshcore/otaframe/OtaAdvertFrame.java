@@ -7,12 +7,15 @@ import cz.bliksoft.meshcore.Settings;
 import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
 import cz.bliksoft.meshcore.frames.OtaConstants.OtaPayloadType;
 import cz.bliksoft.meshcore.frames.OtaConstants.OtaRouteType;
+import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 /**
  * ADVERT payload: pub_key(32) timestamp(4 LE) signature(64) app_data(...).
  *
- * <p>app_data layout:
+ * <p>
+ * app_data layout:
+ * 
  * <pre>
  *   flags(1)              adv_type[3:0], HAS_LATLON[4], HAS_FEAT1[5], HAS_FEAT2[6], HAS_NAME[7]
  *   [lat(4 LE) lon(4 LE)] when HAS_LATLON
@@ -36,71 +39,79 @@ public class OtaAdvertFrame extends OtaFrame {
 	/** Node name, or {@code null} when not present. */
 	public final String name;
 
-	OtaAdvertFrame(MeshcoreCompanion source, OtaRouteType route, int ver, int tc0, int tc1, int hashSize, byte[] path, byte[] payloadBytes) {
+	OtaAdvertFrame(MeshcoreCompanion source, OtaRouteType route, int ver, int tc0, int tc1, int hashSize, byte[] path,
+			byte[] payloadBytes) {
 		super(source, route, OtaPayloadType.ADVERT, ver, tc0, tc1, hashSize, path, payloadBytes);
 
 		int minLen = Settings.PUBKEY_SIZE + 4 + Settings.SIGNATURE_SIZE;
 		if (payloadBytes.length < minLen) {
-			pubKey = payloadBytes.length >= Settings.PUBKEY_SIZE
-					? Arrays.copyOf(payloadBytes, Settings.PUBKEY_SIZE)
+			pubKey = payloadBytes.length >= Settings.PUBKEY_SIZE ? Arrays.copyOf(payloadBytes, Settings.PUBKEY_SIZE)
 					: new byte[0];
 			timestamp = -1;
 			advertType = -1;
-			lat = null; lon = null; feat1 = null; feat2 = null; name = null;
+			lat = null;
+			lon = null;
+			feat1 = null;
+			feat2 = null;
+			name = null;
 			return;
 		}
 
-		int i = 0;
-		pubKey = Arrays.copyOfRange(payloadBytes, i, i + Settings.PUBKEY_SIZE); i += Settings.PUBKEY_SIZE;
-		timestamp = (payloadBytes[i] & 0xFFL) | ((payloadBytes[i+1] & 0xFFL) << 8)
-				| ((payloadBytes[i+2] & 0xFFL) << 16) | ((payloadBytes[i+3] & 0xFFL) << 24); i += 4;
-		i += Settings.SIGNATURE_SIZE; // skip signature
+		ByteReader br = new ByteReader(payloadBytes);
+		pubKey = br.readBytes(Settings.PUBKEY_SIZE);
+		timestamp = br.readUInt32LE();
+		br.skip(Settings.SIGNATURE_SIZE);
 
-		if (i >= payloadBytes.length) {
+		if (br.remaining() == 0) {
 			advertType = -1;
-			lat = null; lon = null; feat1 = null; feat2 = null; name = null;
+			lat = null;
+			lon = null;
+			feat1 = null;
+			feat2 = null;
+			name = null;
 			return;
 		}
 
-		int flags = payloadBytes[i++] & 0xFF;
+		int flags = br.readUnsignedByte();
 		advertType = flags & 0x0F;
 
 		Double tmpLat = null, tmpLon = null;
-		if ((flags & 0x10) != 0 && i + 8 <= payloadBytes.length) {
-			int rawLat = (payloadBytes[i] & 0xFF) | ((payloadBytes[i+1] & 0xFF) << 8)
-					| ((payloadBytes[i+2] & 0xFF) << 16) | (payloadBytes[i+3] << 24); i += 4;
-			int rawLon = (payloadBytes[i] & 0xFF) | ((payloadBytes[i+1] & 0xFF) << 8)
-					| ((payloadBytes[i+2] & 0xFF) << 16) | (payloadBytes[i+3] << 24); i += 4;
-			tmpLat = rawLat / 1_000_000.0;
-			tmpLon = rawLon / 1_000_000.0;
+		if ((flags & 0x10) != 0 && br.remaining() >= 8) {
+			tmpLat = br.readInt32LE() / 1_000_000.0;
+			tmpLon = br.readInt32LE() / 1_000_000.0;
 		}
-		lat = tmpLat; lon = tmpLon;
+		lat = tmpLat;
+		lon = tmpLon;
 
 		Integer tmpFeat1 = null;
-		if ((flags & 0x20) != 0 && i + 2 <= payloadBytes.length) {
-			tmpFeat1 = (payloadBytes[i] & 0xFF) | ((payloadBytes[i+1] & 0xFF) << 8); i += 2;
+		if ((flags & 0x20) != 0 && br.remaining() >= 2) {
+			tmpFeat1 = br.readUInt16LE();
 		}
 		feat1 = tmpFeat1;
 
 		Integer tmpFeat2 = null;
-		if ((flags & 0x40) != 0 && i + 2 <= payloadBytes.length) {
-			tmpFeat2 = (payloadBytes[i] & 0xFF) | ((payloadBytes[i+1] & 0xFF) << 8); i += 2;
+		if ((flags & 0x40) != 0 && br.remaining() >= 2) {
+			tmpFeat2 = br.readUInt16LE();
 		}
 		feat2 = tmpFeat2;
 
-		name = ((flags & 0x80) != 0 && i < payloadBytes.length)
-				? new String(payloadBytes, i, payloadBytes.length - i, StandardCharsets.UTF_8)
-				: null;
+		name = ((flags & 0x80) != 0 && br.remaining() > 0) ? new String(br.readBytes(), StandardCharsets.UTF_8) : null;
 	}
 
 	private static String advertTypeName(int type) {
 		switch (type) {
-		case 0: return "NONE";
-		case 1: return "CHAT";
-		case 2: return "REPEATER";
-		case 3: return "ROOM";
-		case 4: return "SENSOR";
-		default: return "TYPE_" + type;
+		case 0:
+			return "NONE";
+		case 1:
+			return "CHAT";
+		case 2:
+			return "REPEATER";
+		case 3:
+			return "ROOM";
+		case 4:
+			return "SENSOR";
+		default:
+			return "TYPE_" + type;
 		}
 	}
 

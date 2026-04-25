@@ -104,17 +104,21 @@ public class ByteReader {
 
 	/**
 	 * read unsigned Int32 (little-endian)
-	 * 
+	 *
 	 * @return
 	 */
 	public long readUInt32LE() {
 		if (index < 0 || index + 4 > data.length)
 			throw new IndexOutOfBoundsException();
 
-		int result = (data[index] & 0xFF) | ((data[index + 1] & 0xFF) << 8) | ((data[index + 2] & 0xFF) << 16)
-				| ((data[index + 3] & 0xFF) << 24);
+		long result = (data[index] & 0xFFL) | ((data[index + 1] & 0xFFL) << 8) | ((data[index + 2] & 0xFFL) << 16)
+				| ((data[index + 3] & 0xFFL) << 24);
 		index += 4;
 		return result;
+	}
+
+	public int remaining() {
+		return data.length - index;
 	}
 
 	/**

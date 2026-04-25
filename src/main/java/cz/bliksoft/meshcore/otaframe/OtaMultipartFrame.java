@@ -3,9 +3,11 @@ package cz.bliksoft.meshcore.otaframe;
 import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
 import cz.bliksoft.meshcore.frames.OtaConstants.OtaPayloadType;
 import cz.bliksoft.meshcore.frames.OtaConstants.OtaRouteType;
+import cz.bliksoft.meshcore.utils.ByteReader;
 
 /**
- * MULTIPART payload: byte[0] = (remaining&lt;&lt;4) | inner_type, then inner payload bytes.
+ * MULTIPART payload: byte[0] = (remaining&lt;&lt;4) | inner_type, then inner
+ * payload bytes.
  */
 public class OtaMultipartFrame extends OtaFrame {
 
@@ -14,10 +16,12 @@ public class OtaMultipartFrame extends OtaFrame {
 	/** Payload type of the inner (reassembled) packet. */
 	public final OtaPayloadType innerType;
 
-	OtaMultipartFrame(MeshcoreCompanion source, OtaRouteType route, int ver, int tc0, int tc1, int hashSize, byte[] path, byte[] payloadBytes) {
+	OtaMultipartFrame(MeshcoreCompanion source, OtaRouteType route, int ver, int tc0, int tc1, int hashSize,
+			byte[] path, byte[] payloadBytes) {
 		super(source, route, OtaPayloadType.MULTIPART, ver, tc0, tc1, hashSize, path, payloadBytes);
-		if (payloadBytes.length >= 1) {
-			int b = payloadBytes[0] & 0xFF;
+		ByteReader br = new ByteReader(payloadBytes);
+		if (br.remaining() >= 1) {
+			int b = br.readUnsignedByte();
 			remaining = b >> 4;
 			innerType = OtaPayloadType.fromByte((byte) (b & 0x0F));
 		} else {

@@ -1,6 +1,5 @@
 package cz.bliksoft.meshcore.otaframe;
 
-import java.util.Arrays;
 import java.util.List;
 
 import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
@@ -73,28 +72,31 @@ public abstract class OtaFrame {
 	}
 
 	private static OtaFrame parseInternal(MeshcoreCompanion source, byte[] raw) {
-		int i = 0;
-		int header = raw[i++] & 0xFF;
+		ByteReader br = new ByteReader(raw);
+		int header = br.readUnsignedByte();
 		OtaRouteType route = OtaRouteType.fromByte((byte) (header & 0x03));
 		OtaPayloadType payloadType = OtaPayloadType.fromByte((byte) ((header >> 2) & 0x0F));
 		int ver = (header >> 6) & 0x03;
 
 		int tc0 = -1, tc1 = -1;
-		if (route.hasTransportCodes() && i + 3 < raw.length) {
-			tc0 = (raw[i] & 0xFF) | ((raw[i + 1] & 0xFF) << 8);
-			i += 2;
-			tc1 = (raw[i] & 0xFF) | ((raw[i + 1] & 0xFF) << 8);
-			i += 2;
+		if (route.hasTransportCodes() && br.remaining() >= 4) {
+			tc0 = br.readUInt16LE();
+			tc1 = br.readUInt16LE();
 		}
 
-		int pathLenEncoded = i < raw.length ? raw[i++] & 0xFF : 0;
+		int pathLenEncoded = br.remaining() > 0 ? br.readUnsignedByte() : 0;
 		int hashSize = (pathLenEncoded >> 6) + 1;
 		int hashCount = pathLenEncoded & 0x3F;
-		int pathEnd = i + hashCount * hashSize;
-		byte[] path = pathEnd <= raw.length ? Arrays.copyOfRange(raw, i, pathEnd) : new byte[0];
-		i = pathEnd;
-
-		byte[] payloadBytes = i < raw.length ? Arrays.copyOfRange(raw, i, raw.length) : new byte[0];
+		int pathBytes = hashCount * hashSize;
+		byte[] path;
+		byte[] payloadBytes;
+		if (br.remaining() < pathBytes) {
+			path = new byte[0];
+			payloadBytes = new byte[0];
+		} else {
+			path = br.readBytes(pathBytes);
+			payloadBytes = br.remaining() > 0 ? br.readBytes() : new byte[0];
+		}
 
 		switch (payloadType) {
 		case REQ:
@@ -137,12 +139,16 @@ public abstract class OtaFrame {
 		}
 	}
 
-	/** Returns true if the packet arrived with no intermediate hops (path is empty). */
+	/**
+	 * Returns true if the packet arrived with no intermediate hops (path is empty).
+	 */
 	public boolean isDirect() {
 		return path.length == 0;
 	}
 
-	/** Returns the number of intermediate hops recorded in the path (0 = direct). */
+	/**
+	 * Returns the number of intermediate hops recorded in the path (0 = direct).
+	 */
 	public int getHopCount() {
 		return path.length / hashSize;
 	}

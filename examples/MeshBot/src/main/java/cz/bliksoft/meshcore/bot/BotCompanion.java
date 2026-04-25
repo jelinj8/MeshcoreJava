@@ -152,7 +152,7 @@ public class BotCompanion extends SerialMeshcoreCompanion {
 		try {
 			sendFrameWithResult(new CmdGetDeviceTime(), 1000l);
 			sendFrameWithResult(new CmdSetDeviceTime(java.time.Instant.now().getEpochSecond()), 1000l);
-			drainMessages();
+			clearMessages();
 
 //			LogRXDataPush.setDecodeRaw(true);
 //			LogRXDataPush.setDecodePaylodad(true);

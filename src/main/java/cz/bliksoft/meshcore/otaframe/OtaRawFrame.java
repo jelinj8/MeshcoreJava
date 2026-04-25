@@ -11,8 +11,8 @@ import cz.bliksoft.meshcore.utils.MeshcoreUtils;
  */
 public class OtaRawFrame extends OtaFrame {
 
-	OtaRawFrame(MeshcoreCompanion source, OtaRouteType route, OtaPayloadType payloadType, int ver,
-			int tc0, int tc1, int hashSize, byte[] path, byte[] payloadBytes) {
+	OtaRawFrame(MeshcoreCompanion source, OtaRouteType route, OtaPayloadType payloadType, int ver, int tc0, int tc1,
+			int hashSize, byte[] path, byte[] payloadBytes) {
 		super(source, route, payloadType, ver, tc0, tc1, hashSize, path, payloadBytes);
 	}
 
