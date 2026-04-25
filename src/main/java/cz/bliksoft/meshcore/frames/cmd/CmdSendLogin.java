@@ -1,9 +1,14 @@
 package cz.bliksoft.meshcore.frames.cmd;
 
+import java.util.Arrays;
+
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
+import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.group.CommandsWithSentResponse;
+import cz.bliksoft.meshcore.frames.resp.Sent;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
+import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 public class CmdSendLogin extends CommandsWithSentResponse {
 
@@ -38,5 +43,14 @@ public class CmdSendLogin extends CommandsWithSentResponse {
 	@Override
 	public ResponseFrameType getExpectedResponseFrameType() {
 		return ResponseFrameType.PUSH_LOGIN_SUCCESS;
+	}
+
+	@Override
+	public String getResultKey(ResponseFrame callResult) {
+		// Save callResult for getExpectedResponseTimeout(), but key off prefix6
+		// (first 6 bytes of destination pubkey) to match
+		// LoginSuccessPush.getResponseKey()
+		this.callResult = (Sent) callResult;
+		return MeshcoreUtils.hex(Arrays.copyOf(pubkey, 6));
 	}
 }

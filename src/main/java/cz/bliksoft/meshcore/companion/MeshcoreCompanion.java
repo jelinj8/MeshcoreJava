@@ -5,6 +5,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -324,9 +325,9 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	}
 
 	/**
-	 * drain messages (read them without triggering listeners)
+	 * clear messages (read them without triggering listeners)
 	 */
-	public void drainMessages() {
+	public void clearMessages() {
 		try {
 			ResponseFrame resp = sendFrameWithResult(new CmdSyncNext(), 1000l);
 			while (!resp.is(ResponseFrameType.RESP_ERR) && !resp.is(ResponseFrameType.RESP_NO_MORE_MESSAGES)) {
@@ -338,32 +339,50 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	}
 
 	private boolean msgAutosyncInstalled = false;
+	private final AtomicBoolean msgSyncRunning = new AtomicBoolean(false);
 
 	/**
-	 * installs default listeners, triggering reading of messages when received
+	 * Installs a listener that drains the firmware message queue whenever
+	 * PUSH_MSG_WAITING arrives, reading messages until RESP_NO_MORE_MESSAGES.
 	 */
 	public void installAutosyncMessages() {
 		if (msgAutosyncInstalled)
 			return;
 		msgAutosyncInstalled = true;
-		FrameListener<ResponseFrame> msgReader = new FrameListener<ResponseFrame>() {
-			@Override
-			public void onFrame(ResponseFrame frame) {
-				try {
-					switch (frame.getFrameType()) {
-					case PUSH_MSG_WAITING:
-						sendFrame(new CmdSyncNext());
-						break;
-					default:
-						break;
-					}
-				} catch (IOException e) {
-					log.log(Level.SEVERE, "msgReader listener error", e);
-				}
-			}
-		};
+		registerFrameListener(MessageWaitingPush.class, frame -> startMessageDrain());
+		startMessageDrain();
+	}
 
-		registerFrameListener(MessageWaitingPush.class, msgReader);
+	/**
+	 * Read all queued messages from device, triggering the listeners. Effective
+	 * only when the frame reader loop is active.
+	 */
+	public void startMessageDrain() {
+		if (!running.get()) {
+			log.warning("Draining messages too soon, reader thread not yet started.");
+			return; // reader loop not started yet; PUSH_MSG_WAITING will trigger when ready
+		}
+		if (!msgSyncRunning.compareAndSet(false, true))
+			return;
+		Thread t = new Thread(() -> {
+			try {
+				while (true) {
+					ResponseFrame resp = sendFrameWithResult(new CmdSyncNext(), 2000L);
+					if (resp.is(ResponseFrameType.RESP_NO_MORE_MESSAGES))
+						break;
+					// Frame was captured by sendFrameWithResult; re-dispatch to listeners
+					// so ChatManager's MessageFrameGroup handler processes it normally.
+					final ResponseFrame msg = resp;
+					eventExecutor.execute(() -> frameListeners.dispatch(msg));
+				}
+			} catch (IOException | TimeoutException | InterruptedException e) {
+				log.warning("Message drain error: " + e.getMessage());
+			} finally {
+				msgSyncRunning.set(false);
+			}
+		}, "meshcore-msg-drain");
+		t.setDaemon(true);
+		t.start();
 	}
 
 	/**

@@ -260,7 +260,7 @@ public class MeshcoreCompanionConfig {
 					if (contactsSyncFuture == null || contactsSyncFuture.isDone()) {
 						pendingFullResync = false;
 						try {
-							syncContacts(true);
+							syncContacts(false);
 						} catch (IOException e) {
 							log.log(Level.SEVERE, "Failed to resync after PUSH_CONTACTS_FULL", e);
 						}
@@ -337,12 +337,14 @@ public class MeshcoreCompanionConfig {
 				Contact c = (Contact) resp;
 				String key = MeshcoreUtils.hex(c.getPubkey());
 				Map<String, Contact> target = pendingContacts != null ? pendingContacts : contacts;
-				Contact prev = target.put(key, c);
-				contactsArchive.remove(key);
-				if (prev == null)
-					fireContactAdded(c);
-				else
-					fireContactUpdated(c);
+				if (target != null) {
+					Contact prev = target.put(key, c);
+					contactsArchive.remove(key);
+					if (prev == null)
+						fireContactAdded(c);
+					else
+						fireContactUpdated(c);
+				}
 			} else if (resp instanceof Error) {
 				log.severe(String.format("Contact refetch error for %s: %s", MeshcoreUtils.hex(pubkey),
 						((Error) resp).getCode()));
@@ -1288,13 +1290,8 @@ public class MeshcoreCompanionConfig {
 			return;
 		int idx = 0;
 		for (Contact c : contacts.values()) {
-			try {
-				byte[] blob = exportContact(c.getPubkey());
-				props.setProperty(prefix + "." + idx + ".advertPacket", MeshcoreUtils.hex(blob));
-				idx++;
-			} catch (CompanionErrorException e) {
-				log.warning("Skipping contact " + c.getName() + " during backup: " + e.getMessage());
-			}
+			props.setProperty(prefix + "." + idx + ".contactFrame", MeshcoreUtils.hex(c.getBytes()));
+			idx++;
 		}
 		props.setProperty(prefix + "s.count", Integer.toString(idx));
 	}
@@ -1331,9 +1328,14 @@ public class MeshcoreCompanionConfig {
 			return;
 		int count = Integer.parseInt(countStr);
 		for (int i = 0; i < count; i++) {
-			String blobHex = props.getProperty(prefix + "." + i + ".advertPacket");
-			if (blobHex != null)
-				importContact(MeshcoreUtils.fromHex(blobHex));
+			String contactFrame = props.getProperty(prefix + "." + i + ".contactFrame");
+			if (contactFrame != null) {
+				addUpdateContact(new Contact(companion, MeshcoreUtils.fromHex(contactFrame)));
+			} else {
+				String blobHex = props.getProperty(prefix + "." + i + ".advertPacket");
+				if (blobHex != null)
+					importContact(MeshcoreUtils.fromHex(blobHex));
+			}
 		}
 	}
 }
