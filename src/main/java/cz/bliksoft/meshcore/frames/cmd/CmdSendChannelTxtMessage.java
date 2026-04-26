@@ -10,6 +10,13 @@ import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 public class CmdSendChannelTxtMessage extends CommandFrame {
 
+	/**
+	 * Maximum UTF-8 bytes for the message text.
+	 * The serial frame header accounts for 7 bytes, but additional lower-level mesh/LoRa framing
+	 * further reduces usable payload. Value matches the official companion app limit.
+	 */
+	public static final int MAX_TEXT_BYTES = 135;
+
 	final MessageTextType txtType;
 	final int channelId;
 	final long timestamp;

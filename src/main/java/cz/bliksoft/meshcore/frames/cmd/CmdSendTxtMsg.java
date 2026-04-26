@@ -11,6 +11,14 @@ import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 public class CmdSendTxtMsg extends CommandsWithSentResponse {
 
+	/**
+	 * Maximum UTF-8 bytes for the message text.
+	 * The serial frame header accounts for 13 bytes, but additional lower-level mesh/LoRa framing
+	 * further reduces usable payload. Value matches the official companion app limit.
+	 * Room/repeater contacts share this limit (their re-signed retransmit fits within it).
+	 */
+	public static final int MAX_TEXT_BYTES = 150;
+
 	final MessageTextType txtType;
 	final int attempt;
 	final long timestamp;
