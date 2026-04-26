@@ -9,21 +9,25 @@ import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 public class LoginSuccessPush extends ResponseFrame {
 
 	/**
-	 * Server-reported permission flags:
-	 * bit 0 – is_admin (1 = admin access granted)
+	 * Server-reported permission flags: bit 0 – is_admin (1 = admin access granted)
 	 * Other bits are server-defined.
 	 */
 	final int permissions;
-	/** First 6 bytes of the server's public key; used as response key for matching. */
+	/**
+	 * First 6 bytes of the server's public key; used as response key for matching.
+	 */
 	final byte[] prefix6;
 	/** Unix epoch timestamp reflected from the login request (v7+). */
 	final long timestamp;
 	/**
-	 * ACL permission bits reported by the server (v7+).
-	 * Interpretation is server-specific.
+	 * ACL permission bits reported by the server (v7+). Interpretation is
+	 * server-specific.
 	 */
 	final int acl;
-	/** Firmware version level reported by the server (FIRMWARE_VER_LEVEL); 6 for pre-v7 servers. */
+	/**
+	 * Firmware version level reported by the server (FIRMWARE_VER_LEVEL); 0 for
+	 * pre-v7 servers, advanced since.
+	 */
 	final int fwVersionLevel;
 
 	public LoginSuccessPush(MeshcoreCompanion source, byte[] data) {
@@ -51,12 +55,11 @@ public class LoginSuccessPush extends ResponseFrame {
 
 	@Override
 	public String toString() {
-		if (fwVersionLevel > 6) {
-			return String.format("PUSH_LOGIN_SUCCESS ver%d permissions=%d prefix=%s timestamp=%s ACL=%d",
-					fwVersionLevel, permissions, MeshcoreUtils.hex(prefix6), MeshcoreUtils.formatMeshcoreTs(timestamp),
-					acl);
+		if (fwVersionLevel > 0) {
+			return String.format("PUSH_LOGIN_SUCCESS ver=%d admin=%d prefix=%s timestamp=%s ACL=%d", fwVersionLevel,
+					permissions, MeshcoreUtils.hex(prefix6), MeshcoreUtils.formatMeshcoreTs(timestamp), acl);
 		} else {
-			return String.format("PUSH_LOGIN_SUCCESS ver<7 permissions=%d prefix=%s", permissions,
+			return String.format("PUSH_LOGIN_SUCCESS ver=? permissions=%d prefix=%s", permissions,
 					MeshcoreUtils.hex(prefix6));
 		}
 	}
