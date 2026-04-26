@@ -2,7 +2,9 @@ package cz.bliksoft.meshcore.companion;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -10,6 +12,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,6 +35,12 @@ import cz.bliksoft.meshcore.frames.resp.SelfInfo;
  * request-id.
  */
 public abstract class MeshcoreCompanionBase implements Closeable {
+
+	public interface AvailabilityListener {
+		void onAvailable(MeshcoreCompanionBase companion);
+
+		void onUnavailable(MeshcoreCompanionBase companion);
+	}
 
 	public MeshcoreCompanionBase(String name) {
 		this.name = name;
@@ -64,6 +73,16 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 			.newSingleThreadExecutor(new NamedDaemonThreadFactory("MeshcoreEvents"));
 
 	private final ReentrantLock requestLock = new ReentrantLock(true);
+	private final Condition availableCondition = requestLock.newCondition();
+	private final List<AvailabilityListener> availabilityListeners = new CopyOnWriteArrayList<>();
+
+	public void addAvailabilityListener(AvailabilityListener l) {
+		availabilityListeners.add(l);
+	}
+
+	public void removeAvailabilityListener(AvailabilityListener l) {
+		availabilityListeners.remove(l);
+	}
 
 	/**
 	 * termination flag, set by close(), allows exiting of loops.
@@ -200,20 +219,26 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	/**
 	 * Wait for event loop to start up and finish initialization (after each
 	 * reconnect). This is the way to check for device OK on startup.
-	 * 
+	 *
 	 * @param timeoutMs
 	 * @throws TimeoutException
 	 * @throws InterruptedException
 	 */
 	public void awaitAvailable(long timeoutMs) throws TimeoutException, InterruptedException {
-		long deadline = System.currentTimeMillis() + timeoutMs;
-		while (System.currentTimeMillis() < deadline) {
-			if (available.get()) {
-				return;
+		if (available.get())
+			return;
+		requestLock.lock();
+		try {
+			long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMs);
+			while (!available.get()) {
+				long remaining = deadline - System.nanoTime();
+				if (remaining <= 0)
+					throw new TimeoutException("Meshcore device not available in time");
+				availableCondition.awaitNanos(remaining);
 			}
-			Thread.sleep(50);
+		} finally {
+			requestLock.unlock();
 		}
-		throw new TimeoutException("Meshcore device not available in time");
 	}
 
 	/**
@@ -250,7 +275,14 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 			eventExecutor.execute(() -> {
 				try {
 					deviceInit();
-					available.set(true);
+					requestLock.lock();
+					try {
+						available.set(true);
+						availableCondition.signalAll();
+					} finally {
+						requestLock.unlock();
+					}
+					fireAvailabilityListeners(true);
 				} catch (IOException e) {
 					available.set(false);
 					log.severe(String.format("Failed to initialize Mesh companion device: %s", e));
@@ -319,11 +351,13 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	/**
 	 * call when source device becomes unavailable/disconnected. Be sure to call
 	 * this base as it does cleanup!
-	 * 
+	 *
 	 * @param cause
 	 */
 	protected void onDeviceDisconnected(Exception cause) {
+		available.set(false);
 		failAllWaiters(new IOException("Disconnected", cause));
+		fireAvailabilityListeners(false);
 	}
 
 	// ----------------- Utils -----------------
@@ -372,15 +406,26 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	}
 
 	protected void checkBlockingThread() {
-		if (readerThread == null) {
-			throw new IllegalStateException("readerThread not set!");
-		}
-		if (!readerThread.isAlive() || !running.get()) {
-			throw new IllegalStateException("Current readerThread or reader loop is not running!");
-		}
-		if (Thread.currentThread() == readerThread) {
+		if (terminate)
+			throw new IllegalStateException("Companion is closed");
+		Thread rt = readerThread;
+		if (rt == null || !rt.isAlive())
+			throw new IllegalStateException("Reader thread not started!");
+		if (Thread.currentThread() == rt)
 			throw new IllegalStateException(
 					"Blocking API cannot be called from reader thread. Dispatch work to eventExecutor.");
+	}
+
+	private void fireAvailabilityListeners(boolean isAvailable) {
+		for (AvailabilityListener l : availabilityListeners) {
+			try {
+				if (isAvailable)
+					l.onAvailable(this);
+				else
+					l.onUnavailable(this);
+			} catch (Exception e) {
+				log.warning("AvailabilityListener threw: " + e);
+			}
 		}
 	}
 

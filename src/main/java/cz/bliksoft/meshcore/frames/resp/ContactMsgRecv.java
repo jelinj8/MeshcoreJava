@@ -80,8 +80,8 @@ public class ContactMsgRecv extends MessageFrameGroup {
 	final String text;
 	/**
 	 * First 4 bytes of the actual sender's public key. Only populated for
-	 * {@link MessageTextType#TXT_TYPE_SIGNED_PLAIN} messages; empty (all zeros) for
-	 * all other types.
+	 * {@link MessageTextType#TXT_TYPE_SIGNED_PLAIN} messages; null for all other
+	 * types.
 	 */
 	final byte[] senderPrefix;
 
@@ -108,7 +108,7 @@ public class ContactMsgRecv extends MessageFrameGroup {
 		if (textType == MessageTextType.TXT_TYPE_SIGNED_PLAIN) {
 			senderPrefix = br.readBytes(4);
 		} else {
-			senderPrefix = new byte[4];
+			senderPrefix = null;
 		}
 
 		text = br.readFixedCString(Settings.MAX_FRAME_SIZE);
@@ -123,8 +123,8 @@ public class ContactMsgRecv extends MessageFrameGroup {
 	public String toString() {
 		Contact c = companion.getConfig().getContact(from6);
 		String cName = c == null ? "?" : c.getName();
-		return String.format("%s sender6=%s:%s timestamp=%s snr=%.2f pathLen=%d flood=%b text=%s", getFrameType(),
-				MeshcoreUtils.hex(from6), cName, MeshcoreUtils.formatMeshcoreTs(timestamp), snr4 / 4.0, pathLen,
-				isFlood(), text);
+		return String.format("%s %s sender6=%s:%s timestamp=%s snr=%.2f pathLen=%d flood=%b text=%s", getFrameType(),
+				textType, MeshcoreUtils.hex(from6), cName, MeshcoreUtils.formatMeshcoreTs(timestamp), snr4 / 4.0,
+				pathLen, isFlood(), text);
 	}
 }

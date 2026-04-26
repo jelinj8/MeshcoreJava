@@ -545,6 +545,25 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	}
 
 	/**
+	 * Send a keep-alive request (REQ_TYPE_KEEP_ALIVE = 0x02) to a room server. The
+	 * server resets push-failure tracking and will re-push any unsynced messages
+	 * from {@code syncSince} onwards. The room server replies with a plain ACK (not
+	 * a binary-response push), so this method fires and does not block for a
+	 * content response.
+	 *
+	 * @param pubkey32  full 32-byte public key of the room server
+	 * @param syncSince epoch-seconds of the last post the client has received; 0 to
+	 *                  skip the sync-since hint
+	 */
+	public void sendKeepAlive(byte[] pubkey32, long syncSince)
+			throws IOException, TimeoutException, InterruptedException {
+		java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocate(5).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+		buf.put((byte) 0x02); // REQ_TYPE_KEEP_ALIVE
+		buf.putInt((int) syncSince);
+		sendBinaryReqAsync(pubkey32, buf.array());
+	}
+
+	/**
 	 * Send an anonymous request. Returns RESP_SENT; no async response is defined.
 	 */
 	public Sent sendAnonReq(byte[] pubkey, byte[] msgData) throws IOException, TimeoutException, InterruptedException {

@@ -106,9 +106,9 @@ public class ChannelMsgRecv extends MessageFrameGroup {
 		ChannelInfo ch = companion.getConfig().getChannel(channelIdx);
 		String channelName = (ch != null ? ch.getName() : "?");
 
-		return String.format("%s channel=%d:%s timestamp=%s snr=%.2f pathLen=%d flood=%b text=%s", getFrameType(),
-				channelIdx, channelName, MeshcoreUtils.formatMeshcoreTs(timestamp), snr4 / 4.0, pathLen, isFlood(),
-				text);
+		return String.format("%s %s channel=%d:%s timestamp=%s snr=%.2f pathLen=%d flood=%b text=%s", getFrameType(),
+				textType, channelIdx, channelName, MeshcoreUtils.formatMeshcoreTs(timestamp), snr4 / 4.0, pathLen,
+				isFlood(), text);
 	}
 
 }

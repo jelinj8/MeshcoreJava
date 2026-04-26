@@ -7,6 +7,7 @@ import cz.bliksoft.meshcore.frames.FrameConstants.MessageTextType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.group.CommandsWithSentResponse;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
+import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 public class CmdSendTxtMsg extends CommandsWithSentResponse {
 
@@ -65,4 +66,9 @@ public class CmdSendTxtMsg extends CommandsWithSentResponse {
 		return ResponseFrameType.PUSH_SEND_CONFIRMED;
 	}
 
+	@Override
+	public String toString() {
+		return String.format("%s %s %d@%s->%s", getFrameType(), txtType, attempt, MeshcoreUtils.hex(pubKeyPrefix),
+				text);
+	}
 }
