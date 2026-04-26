@@ -6,7 +6,6 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.MessageTextType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
-import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 public class CmdSendChannelTxtMessage extends CommandFrame {
 

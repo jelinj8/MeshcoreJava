@@ -64,3 +64,7 @@ companion.registerFrameListener(MessageFrameGroup.class, frame -> { ... });
 
 All serial frame traffic is logged to `cz.bliksoft.meshcore.companion.MeshcoreCompanion.DEV` at FINE level. Detailed air-frame decoding is controlled at runtime via `LogRXDataPush.isDecodeRaw(true)` / `isDecodePayload(true)` / `setTranslatePath(true)`.
 
+### Room server & repeater commands
+
+See `CLI.md` for a full reference of binary protocol requests and text CLI commands available when interacting with room server and repeater nodes.
+
