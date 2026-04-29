@@ -4,6 +4,11 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that configures the device's LoRa radio parameters (frequency,
+ * bandwidth, spreading factor, coding rate). Expects a {@code RESP_OK}
+ * response.
+ */
 public class CmdSetRadioParams extends CommandFrame {
 
 	final long freq;

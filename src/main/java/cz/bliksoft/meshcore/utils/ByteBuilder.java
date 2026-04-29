@@ -2,7 +2,21 @@ package cz.bliksoft.meshcore.utils;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Mutable byte buffer for building MeshCore protocol frames, analogous to
+ * {@link StringBuilder} for text.
+ *
+ * <p>
+ * The internal buffer grows automatically as data is appended. Call
+ * {@link #toArray()} to obtain a trimmed copy of the accumulated bytes.
+ * </p>
+ */
 public class ByteBuilder {
+
+	/** Creates an empty builder with an initial capacity of 256 bytes. */
+	public ByteBuilder() {
+	}
+
 	private byte[] buf = new byte[256];
 	private int size;
 
@@ -119,6 +133,8 @@ public class ByteBuilder {
 
 	/**
 	 * Returns the accumulated bytes as a new array of exactly the right size.
+	 *
+	 * @return trimmed copy of the accumulated bytes
 	 */
 	public byte[] toArray() {
 		return java.util.Arrays.copyOf(buf, size);

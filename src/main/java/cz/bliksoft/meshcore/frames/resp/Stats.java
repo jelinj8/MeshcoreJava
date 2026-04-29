@@ -6,72 +6,143 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.StatsCommandFrameSubtype;
 import cz.bliksoft.meshcore.utils.ByteReader;
 
+/**
+ * Response to {@link cz.bliksoft.meshcore.frames.cmd.CmdGetStats} exposing one
+ * of three statistics subtypes: core system metrics (battery, uptime, queue),
+ * radio signal metrics, or packet counters.
+ */
 public class Stats extends ResponseFrame {
 
+	/**
+	 * @return the statistics subtype reported in this frame
+	 */
 	public StatsCommandFrameSubtype getSubtype() {
 		return subtype;
 	}
 
+	/**
+	 * @return battery voltage in millivolts; {@code -1} if not available (subtype
+	 *         != CORE)
+	 */
 	public int getBattmV() {
 		return battmV;
 	}
 
+	/**
+	 * @return device uptime in seconds; {@code -1} if not available (subtype !=
+	 *         CORE)
+	 */
 	public long getUptimeS() {
 		return uptimeS;
 	}
 
+	/**
+	 * @return bitmask of error flags; {@code 0} if not available (subtype != CORE)
+	 */
 	public int getErrflags() {
 		return errflags;
 	}
 
+	/**
+	 * @return current outgoing packet queue length; {@code -1} if not available
+	 *         (subtype != CORE)
+	 */
 	public int getQueueLen() {
 		return queueLen;
 	}
 
+	/**
+	 * @return LoRa noise floor in dBm; {@code 0} if not available (subtype !=
+	 *         RADIO)
+	 */
 	public int getNoiseFloor() {
 		return noiseFloor;
 	}
 
+	/**
+	 * @return RSSI of the last received packet in dBm; {@code 0} if not available
+	 *         (subtype != RADIO)
+	 */
 	public int getLastRssi() {
 		return lastRssi;
 	}
 
+	/**
+	 * @return SNR of the last received packet multiplied by 4; divide by 4.0 for dB
+	 *         value; {@code 0} if not available (subtype != RADIO)
+	 */
 	public int getLastSnr4() {
 		return lastSnr4;
 	}
 
+	/**
+	 * @return total time spent transmitting on air in seconds; {@code -1} if not
+	 *         available (subtype != RADIO)
+	 */
 	public long getTxAirSec() {
 		return txAirSec;
 	}
 
+	/**
+	 * @return total time spent receiving on air in seconds; {@code -1} if not
+	 *         available (subtype != RADIO)
+	 */
 	public long getRxAirSec() {
 		return rxAirSec;
 	}
 
+	/**
+	 * @return total number of packets received; {@code -1} if not available
+	 *         (subtype != PACKETS)
+	 */
 	public long getRecv() {
 		return recv;
 	}
 
+	/**
+	 * @return total number of packets sent; {@code -1} if not available (subtype !=
+	 *         PACKETS)
+	 */
 	public long getSent() {
 		return sent;
 	}
 
+	/**
+	 * @return number of flood packets sent; {@code -1} if not available (subtype !=
+	 *         PACKETS)
+	 */
 	public long getSentFlood() {
 		return sentFlood;
 	}
 
+	/**
+	 * @return number of direct packets sent; {@code -1} if not available (subtype
+	 *         != PACKETS)
+	 */
 	public long getSentDirect() {
 		return sentDirect;
 	}
 
+	/**
+	 * @return number of flood packets received; {@code -1} if not available
+	 *         (subtype != PACKETS)
+	 */
 	public long getRecvFlood() {
 		return recvFlood;
 	}
 
+	/**
+	 * @return number of direct packets received; {@code -1} if not available
+	 *         (subtype != PACKETS)
+	 */
 	public long getRecvDirect() {
 		return recvDirect;
 	}
 
+	/**
+	 * @return number of receive errors; {@code -1} if not available (subtype !=
+	 *         PACKETS)
+	 */
 	public long getRecvErrors() {
 		return recvErrors;
 	}

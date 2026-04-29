@@ -62,6 +62,23 @@ import cz.bliksoft.meshcore.otaframe.OtaGroupFrame;
 import cz.bliksoft.meshcore.otaframe.OtaUnicastFrame;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * High-level MeshCore companion device API.
+ *
+ * <p>
+ * Extends {@link MeshcoreCompanionBase} with typed frame dispatch, synchronous
+ * and asynchronous messaging (direct text, channel text, binary, anonymous,
+ * status, telemetry, trace-path, path-discovery), signing, channel operations,
+ * and an optional message-queue autosync mechanism.
+ * </p>
+ *
+ * <p>
+ * Concrete transports ({@link SerialMeshcoreCompanion},
+ * {@link BleMeshcoreCompanion}, {@link TCPMeshcoreCompanion}) extend this class
+ * and implement the {@link MeshcoreCompanionBase#sendBinaryFrame} /
+ * {@link MeshcoreCompanionBase#getBinaryFrame} transport layer.
+ * </p>
+ */
 public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 
 	public MeshcoreCompanion(String name) {
@@ -73,6 +90,12 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 
 	private final MeshcoreCompanionConfig config;
 
+	/**
+	 * Returns the configuration facade for this companion, providing contact,
+	 * channel, and device-settings management.
+	 *
+	 * @return the {@link MeshcoreCompanionConfig} instance
+	 */
 	public MeshcoreCompanionConfig getConfig() {
 		return config;
 	}
@@ -86,10 +109,29 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	private static final int LOG_FRAME_BUFFER_SIZE = 10;
 	private final java.util.ArrayDeque<LogRXDataPush> recentLogFrames = new java.util.ArrayDeque<>();
 
+	/**
+	 * Enables or disables automatic pairing of
+	 * {@link cz.bliksoft.meshcore.frames.push.LogRXDataPush} frames with the
+	 * message frames they correspond to.
+	 *
+	 * <p>
+	 * When enabled, each incoming
+	 * {@link cz.bliksoft.meshcore.frames.group.MessageFrameGroup} is matched
+	 * against recent log frames and the matching log frame is attached via
+	 * {@link cz.bliksoft.meshcore.frames.group.MessageFrameGroup#setPairedLogFrame}.
+	 * </p>
+	 *
+	 * @param enabled {@code true} to enable log-frame pairing
+	 */
 	public void setLogFramePairing(boolean enabled) {
 		this.logFramePairing = enabled;
 	}
 
+	/**
+	 * Returns {@code true} if log-frame pairing is currently enabled.
+	 *
+	 * @return {@code true} if log-frame pairing is active
+	 */
 	public boolean isLogFramePairing() {
 		return logFramePairing;
 	}
@@ -326,10 +368,22 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 		frameListeners.register(frameClass, listener);
 	}
 
+	/**
+	 * Removes a listener for the given frame type.
+	 *
+	 * @param <T>        frame type bound
+	 * @param frameClass the frame class the listener was registered for
+	 * @param listener   the listener to remove
+	 */
 	public <T extends Frame> void removeFrameListener(Class<T> frameClass, FrameListener<? super T> listener) {
 		frameListeners.remove(frameClass, listener);
 	}
 
+	/**
+	 * Removes a listener from all frame-type registrations.
+	 *
+	 * @param listener the listener to remove
+	 */
 	public void removeFrameListener(FrameListener<?> listener) {
 		frameListeners.removeFrameListener(listener);
 	}
@@ -396,7 +450,8 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	}
 
 	/**
-	 * perform a device factory reset
+	 * Performs a device factory reset, clearing all contacts and configuration, and
+	 * resets the local configuration cache.
 	 */
 	public void factoryReset() {
 		try {
@@ -734,7 +789,19 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 		return (Sent) resp;
 	}
 
-	/** Send a trace-path packet and wait for the trace data push. */
+	/**
+	 * Send a trace-path packet and wait for the
+	 * {@link cz.bliksoft.meshcore.frames.push.TraceDataPush} response.
+	 *
+	 * @param tag   4-byte tag identifying this trace
+	 * @param auth  4-byte authentication code
+	 * @param flags flags byte encoding the path-hash size per hop
+	 * @param path  encoded outbound path bytes
+	 * @return the trace data push containing per-hop SNR readings
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no trace response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public TraceDataPush sendTracePath(byte[] tag, long auth, byte flags, byte[] path)
 			throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = sendFrameWithResultAndResponse(new CmdSendTracePath(tag, auth, flags, path),
@@ -745,8 +812,18 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	}
 
 	/**
-	 * Send a trace-path packet and return {@link Sent} immediately without waiting
-	 * for the trace data push.
+	 * Send a trace-path packet and return
+	 * {@link cz.bliksoft.meshcore.frames.resp.Sent} immediately without waiting for
+	 * the trace data push.
+	 *
+	 * @param tag   4-byte tag identifying this trace
+	 * @param auth  4-byte authentication code
+	 * @param flags flags byte encoding the path-hash size per hop
+	 * @param path  encoded outbound path bytes
+	 * @return RESP_SENT acknowledgement
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public Sent sendTracePathAsync(byte[] tag, long auth, byte flags, byte[] path)
 			throws IOException, TimeoutException, InterruptedException {
@@ -757,8 +834,14 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	}
 
 	/**
-	 * Trigger path-discovery for a contact and wait for the discovery response
-	 * push.
+	 * Triggers path discovery for the given contact and waits for the
+	 * {@link cz.bliksoft.meshcore.frames.push.PathDiscoveryResponsePush} response.
+	 *
+	 * @param pubkey 32-byte Ed25519 public key of the target contact
+	 * @return the path-discovery response push
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no discovery response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public PathDiscoveryResponsePush sendPathDiscoveryReq(byte[] pubkey)
 			throws IOException, TimeoutException, InterruptedException {
@@ -770,8 +853,15 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	}
 
 	/**
-	 * Trigger path-discovery and return {@link Sent} immediately without waiting
-	 * for the discovery response push.
+	 * Triggers path discovery and returns
+	 * {@link cz.bliksoft.meshcore.frames.resp.Sent} immediately without waiting for
+	 * the discovery response push.
+	 *
+	 * @param pubkey 32-byte Ed25519 public key of the target contact
+	 * @return RESP_SENT acknowledgement
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public Sent sendPathDiscoveryReqAsync(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = sendFrameWithResult(new CmdSendPathDiscoveryReq(pubkey), DEFAULT_CMD_TIMEOUT);
@@ -781,7 +871,13 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	}
 
 	/**
-	 * Send control data (first byte must have bit 7 set).
+	 * Sends raw control data. The first byte of {@code data} must have bit 7 set as
+	 * required by the MeshCore protocol.
+	 *
+	 * @param data control payload bytes (first byte must have bit 7 set)
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public void sendControlData(byte[] data) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = sendFrameWithResult(new CmdSendControlData(data), DEFAULT_CMD_TIMEOUT);
@@ -790,7 +886,15 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	}
 
 	/**
-	 * Log in to a room server. Returns the login success/fail push.
+	 * Logs in to a room server and waits for the login success or failure push.
+	 *
+	 * @param pubkey   32-byte Ed25519 public key of the room server
+	 * @param password login password
+	 * @return {@link cz.bliksoft.meshcore.frames.push.LoginSuccessPush} or
+	 *         {@link cz.bliksoft.meshcore.frames.push.LoginFailPush}
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no login response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public ResponseFrame login(byte[] pubkey, String password)
 			throws IOException, TimeoutException, InterruptedException {
@@ -799,8 +903,16 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	}
 
 	/**
-	 * Send a login request and return {@link Sent} immediately without waiting for
-	 * login success/fail push.
+	 * Sends a login request and returns
+	 * {@link cz.bliksoft.meshcore.frames.resp.Sent} immediately without waiting for
+	 * the login success/fail push.
+	 *
+	 * @param pubkey   32-byte Ed25519 public key of the room server
+	 * @param password login password
+	 * @return RESP_SENT acknowledgement
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public Sent loginAsync(byte[] pubkey, String password) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = sendFrameWithResult(new CmdSendLogin(pubkey, password), DEFAULT_CMD_TIMEOUT);
@@ -810,7 +922,12 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	}
 
 	/**
-	 * Disconnect from a room server.
+	 * Disconnects from a room server.
+	 *
+	 * @param pubkey 32-byte Ed25519 public key of the room server
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public void logout(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = sendFrameWithResult(new CmdLogout(pubkey), DEFAULT_CMD_TIMEOUT);
@@ -824,6 +941,10 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	 * @param data data to sign; must fit within the max length reported by the
 	 *             device
 	 * @return 64-byte Ed25519 signature
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public byte[] sign(byte[] data) throws IOException, TimeoutException, InterruptedException {
 		SignStart signStart = (SignStart) sendFrameWithResult(new CmdSignStart(), DEFAULT_CMD_TIMEOUT);

@@ -82,6 +82,18 @@ import cz.bliksoft.meshcore.frames.resp.Stats;
 import cz.bliksoft.meshcore.frames.resp.TuningParams;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Configuration facade over {@link MeshcoreCompanion} for device setup, contact
+ * and channel management, backup/restore, and radio configuration.
+ *
+ * <p>
+ * An instance of this class is automatically created by
+ * {@link MeshcoreCompanion} and accessed via
+ * {@link MeshcoreCompanion#getConfig()}. It maintains an in-memory cache of
+ * contacts and channels that is kept in sync with the device via push-frame
+ * listeners.
+ * </p>
+ */
 public class MeshcoreCompanionConfig {
 	private static final Logger log = Logger.getLogger(MeshcoreCompanionConfig.class.getName());
 
@@ -91,6 +103,13 @@ public class MeshcoreCompanionConfig {
 		this.companion = companion;
 	}
 
+	/**
+	 * Performs initial device synchronisation: fetches battery/storage info,
+	 * private key, and channels. Called automatically by the companion during
+	 * device initialisation.
+	 *
+	 * @throws IOException on transport or synchronisation error
+	 */
 	public void init() throws IOException {
 		try {
 			companion.sendFrameWithResult(new CmdGetBattAndStorage(), 10000);
@@ -102,6 +121,10 @@ public class MeshcoreCompanionConfig {
 		syncContacts(true);
 	}
 
+	/**
+	 * Clears all cached configuration state (private key, autoadd config, custom
+	 * vars, tuning params). Called after a factory reset.
+	 */
 	public void reset() {
 		privateKey = null;
 		autoaddConfig = null;
@@ -117,6 +140,8 @@ public class MeshcoreCompanionConfig {
 	 * Returns contacts that are not saved on the device: contacts removed from the
 	 * device ({@code PUSH_CONTACT_DELETED}) and contacts seen over the air but not
 	 * added ({@code PUSH_NEW_ADVERT}).
+	 *
+	 * @return live map of archived contacts keyed by hex public key
 	 */
 	public Map<String, Contact> getContactsArchive() {
 		return contactsArchive;
@@ -125,6 +150,8 @@ public class MeshcoreCompanionConfig {
 	/**
 	 * Returns a snapshot of all currently saved contacts, or an empty list if the
 	 * initial sync has not completed yet.
+	 *
+	 * @return immutable-safe copy of the saved contact list
 	 */
 	public List<Contact> getSavedContacts() {
 		if (contacts == null)
@@ -137,6 +164,8 @@ public class MeshcoreCompanionConfig {
 	 * no sync has finished yet. A non-null value means the saved contacts map is
 	 * fully populated and new listeners will not receive the initial batch of
 	 * {@link ContactListener#onContactAdded} calls.
+	 *
+	 * @return Unix epoch seconds of the last sync, or {@code null}
 	 */
 	public Long getLastContactsSync() {
 		return lastContactsSync;
@@ -144,10 +173,21 @@ public class MeshcoreCompanionConfig {
 
 	private final List<ContactListener> contactListeners = new CopyOnWriteArrayList<>();
 
+	/**
+	 * Registers a listener to be notified when contacts are added, updated, or
+	 * removed.
+	 *
+	 * @param listener the listener to register
+	 */
 	public void addContactListener(ContactListener listener) {
 		contactListeners.add(listener);
 	}
 
+	/**
+	 * Removes a previously registered contact listener.
+	 *
+	 * @param listener the listener to remove
+	 */
 	public void removeContactListener(ContactListener listener) {
 		contactListeners.remove(listener);
 	}
@@ -353,6 +393,20 @@ public class MeshcoreCompanionConfig {
 		}
 	}
 
+	/**
+	 * Requests a contact list synchronisation from the device.
+	 *
+	 * <p>
+	 * When {@code full} is {@code true} or no previous sync has completed, fetches
+	 * all contacts from scratch. Otherwise performs an incremental sync for
+	 * contacts changed since the last sync timestamp. Use
+	 * {@link #awaitContactsSync(long)} to block until the sync completes.
+	 * </p>
+	 *
+	 * @param full {@code true} to force a full resync, {@code false} for
+	 *             incremental
+	 * @throws IOException on transport error
+	 */
 	public void syncContacts(boolean full) throws IOException {
 		installSyncContacts();
 		if (full || lastContactsSync == null) {
@@ -442,6 +496,14 @@ public class MeshcoreCompanionConfig {
 
 	private Map<Integer, ChannelInfo> channels = new HashMap<>();
 
+	/**
+	 * Fetches all channel slots from the device and updates the local channel
+	 * cache. Only slots with a non-empty name are retained.
+	 *
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public void syncChannels() throws IOException, TimeoutException, InterruptedException {
 		channels = new HashMap<>();
 		for (int i = 0; i < getMaxGroupChannels(); i++) {
@@ -457,6 +519,14 @@ public class MeshcoreCompanionConfig {
 		}
 	}
 
+	/**
+	 * Re-fetches a single channel slot from the device and updates the local cache.
+	 *
+	 * @param id the channel slot index to refresh
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public void syncChannel(int id) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdGetChannel(id), 1000);
 		if (resp instanceof ChannelInfo) {
@@ -476,9 +546,10 @@ public class MeshcoreCompanionConfig {
 	 * @param name channel name, or {@code null} to remove the channel (zeroes the
 	 *             key)
 	 * @param key  16-byte AES channel key
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void setChannel(int id, String name, byte[] key) throws IOException, TimeoutException, InterruptedException {
 		if (name != null) {
@@ -513,9 +584,10 @@ public class MeshcoreCompanionConfig {
 	 * @param name channel name
 	 * @param key  16-byte AES channel key
 	 * @return the slot index that was written
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public int setChannel(String name, byte[] key) throws IOException, TimeoutException, InterruptedException {
 		syncChannels();
@@ -543,23 +615,63 @@ public class MeshcoreCompanionConfig {
 		}
 	}
 
+	/**
+	 * Convenience overload of {@link #setChannel(int, String, byte[])} that accepts
+	 * the key as a hex string.
+	 *
+	 * @param id     slot index (0-based)
+	 * @param name   channel name, or {@code null} to remove the channel
+	 * @param keyHex 16-byte AES channel key as a 32-character hex string
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public void setChannel(int id, String name, String keyHex)
 			throws IOException, TimeoutException, InterruptedException {
 		setChannel(id, name, MeshcoreUtils.fromHex(keyHex));
 	}
 
+	/**
+	 * Convenience overload of {@link #setChannel(String, byte[])} that accepts the
+	 * key as a hex string.
+	 *
+	 * @param name   channel name
+	 * @param keyHex 16-byte AES channel key as a 32-character hex string
+	 * @return the slot index that was written
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public int setChannel(String name, String keyHex) throws IOException, TimeoutException, InterruptedException {
 		return setChannel(name, MeshcoreUtils.fromHex(keyHex));
 	}
 
+	/**
+	 * Returns the cached channel for the given slot index, or {@code null} if the
+	 * slot is empty or has not been synced yet.
+	 *
+	 * @param id slot index (0-based)
+	 * @return the {@link ChannelInfo}, or {@code null}
+	 */
 	public ChannelInfo getChannel(int id) {
 		return channels.get(id);
 	}
 
+	/**
+	 * Returns an unmodifiable view of all currently cached (non-empty) channels.
+	 *
+	 * @return collection of channel info objects
+	 */
 	public Collection<ChannelInfo> getChannels() {
 		return Collections.unmodifiableCollection(channels.values());
 	}
 
+	/**
+	 * Returns the cached channel with the given name, or {@code null} if not found.
+	 *
+	 * @param name channel name to look up
+	 * @return the matching {@link ChannelInfo}, or {@code null}
+	 */
 	public ChannelInfo getChannel(String name) {
 		if (name == null || name.length() == 0)
 			return null;
@@ -570,24 +682,47 @@ public class MeshcoreCompanionConfig {
 		return null;
 	}
 
-	/** Returns the {@link DeviceInfo} fetched during device handshake. */
+	/**
+	 * Returns the {@link DeviceInfo} fetched during device handshake.
+	 *
+	 * @return the device info, or {@code null} if the handshake has not completed
+	 */
 	public DeviceInfo getDeviceInfo() {
 		return companion.getDeviceInfo();
 	}
 
-	/** Returns the {@link SelfInfo} fetched during device handshake. */
+	/**
+	 * Returns the {@link SelfInfo} fetched during device handshake.
+	 *
+	 * @return the self info, or {@code null} if the handshake has not completed
+	 */
 	public SelfInfo getSelfInfo() {
 		return companion.getSelfInfo();
 	}
 
+	/**
+	 * Returns the companion protocol version reported by the device.
+	 *
+	 * @return protocol version number
+	 */
 	public int getProtocolVersion() {
 		return getDeviceInfo().getProtocolVersion();
 	}
 
+	/**
+	 * Returns the maximum number of group channels supported by the device.
+	 *
+	 * @return maximum group channel count
+	 */
 	public int getMaxGroupChannels() {
 		return getDeviceInfo().getMaxGroupChannels();
 	}
 
+	/**
+	 * Returns the maximum number of contacts the device can store.
+	 *
+	 * @return maximum contact count
+	 */
 	public int getMaxContacts() {
 		return getDeviceInfo().getMaxContacts();
 	}
@@ -633,9 +768,10 @@ public class MeshcoreCompanionConfig {
 	 * @param key 64-byte Ed25519 private key
 	 * @throws UnsupportedOperationException when private key import is disabled in
 	 *                                       device firmware
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException                   if the transport fails
+	 * @throws TimeoutException              if the device does not respond in time
+	 * @throws InterruptedException          if the calling thread is interrupted
+	 *                                       while waiting
 	 */
 	public void importPrivateKey(byte[] key) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdImportPrivateKey(key), defaultGetTimeout);
@@ -647,6 +783,15 @@ public class MeshcoreCompanionConfig {
 
 	private AutoaddConfig autoaddConfig = null;
 
+	/**
+	 * Returns the auto-add configuration, fetching it from the device on first call
+	 * and caching thereafter.
+	 *
+	 * @return the autoadd configuration
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public AutoaddConfig getAutoaddConfig() throws IOException, TimeoutException, InterruptedException {
 		if (autoaddConfig != null)
 			return autoaddConfig;
@@ -657,6 +802,15 @@ public class MeshcoreCompanionConfig {
 
 	private CustomVars customVars = null;
 
+	/**
+	 * Returns the device custom variables, fetching them from the device on first
+	 * call and caching thereafter.
+	 *
+	 * @return the custom variables map
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public CustomVars getCustomVars() throws IOException, TimeoutException, InterruptedException {
 		if (customVars != null)
 			return customVars;
@@ -667,6 +821,15 @@ public class MeshcoreCompanionConfig {
 
 	private TuningParams tuningParams = null;
 
+	/**
+	 * Returns the device tuning parameters, fetching them from the device on first
+	 * call and caching thereafter.
+	 *
+	 * @return the tuning parameters
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public TuningParams getTuningParams() throws IOException, TimeoutException, InterruptedException {
 		if (tuningParams != null)
 			return tuningParams;
@@ -675,12 +838,32 @@ public class MeshcoreCompanionConfig {
 		return tuningParams;
 	}
 
+	/**
+	 * Imports a contact onto the device from a serialised advert packet.
+	 *
+	 * @param advertPacket serialised advert packet (minimum 98 bytes), as produced
+	 *                     by {@link #exportContact(byte[])}
+	 * @throws CompanionErrorException if the device rejects the packet
+	 * @throws IOException             on transport error
+	 * @throws TimeoutException        if no response arrives in time
+	 * @throws InterruptedException    if the calling thread is interrupted
+	 */
 	public void importContact(byte[] advertPacket) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdImportContact(advertPacket), defaultGetTimeout);
 		if (resp instanceof Error)
 			throw new CompanionErrorException(resp.toString());
 	}
 
+	/**
+	 * Exports a contact's serialised advert packet from the device.
+	 *
+	 * @param pubkey 32-byte Ed25519 public key of the contact to export
+	 * @return the serialised advert packet bytes
+	 * @throws CompanionErrorException if the contact is not found
+	 * @throws IOException             on transport error
+	 * @throws TimeoutException        if no response arrives in time
+	 * @throws InterruptedException    if the calling thread is interrupted
+	 */
 	public byte[] exportContact(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdExportContact(pubkey), defaultGetTimeout);
 		if (resp instanceof ExportContact)
@@ -695,9 +878,10 @@ public class MeshcoreCompanionConfig {
 	 * contacts
 	 *
 	 * @param pubkey 32B
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void removeContact(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdRemoveContact(pubkey), defaultGetTimeout);
@@ -710,7 +894,16 @@ public class MeshcoreCompanionConfig {
 		}
 	}
 
-	// resetPath // refetch contact after for sync
+	/**
+	 * Clears the cached outbound path to the given contact, forcing the device to
+	 * use flood routing for the next message, then re-fetches the contact record to
+	 * reflect the updated path state.
+	 *
+	 * @param pubkey 32-byte Ed25519 public key of the contact
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public void resetPath(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdResetPath(pubkey), defaultGetTimeout);
 		if (resp instanceof Error)
@@ -718,7 +911,17 @@ public class MeshcoreCompanionConfig {
 		refetchContact(pubkey);
 	}
 
-	// setAdvertLatLon // refetch after
+	/**
+	 * Sets the advertised GPS coordinates of the device and refreshes the cached
+	 * {@link cz.bliksoft.meshcore.frames.resp.SelfInfo}.
+	 *
+	 * @param lat latitude in decimal degrees
+	 * @param lon longitude in decimal degrees
+	 * @param alt altitude in metres, or {@code null} if not supported by firmware
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public void setAdvertLatLon(double lat, double lon, Integer alt)
 			throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdSetAdvertLatLon(lat, lon, alt), defaultGetTimeout);
@@ -734,9 +937,10 @@ public class MeshcoreCompanionConfig {
 	 *
 	 * @param flags   bitmask of {@link AutoAddConfigFlags} values
 	 * @param maxHops maximum hop count for auto-add (0–64); pass -1 for unlimited
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void setAutoAddConfig(byte flags, int maxHops) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdSetAutoaddConfig(flags, maxHops), defaultGetTimeout);
@@ -745,6 +949,16 @@ public class MeshcoreCompanionConfig {
 		autoaddConfig = null;
 	}
 
+	/**
+	 * Sets or updates a custom variable on the device and invalidates the local
+	 * cache.
+	 *
+	 * @param name  variable name
+	 * @param value variable value
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public void setCustomVar(String name, String value) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdSetCustomVar(name, value), defaultGetTimeout);
 		if (resp instanceof Error)
@@ -752,7 +966,15 @@ public class MeshcoreCompanionConfig {
 		customVars = null;
 	}
 
-	// setDevicePin // refetch after
+	/**
+	 * Sets the device BLE PIN. Pass {@code null} to remove the PIN. The device info
+	 * is refreshed after the change.
+	 *
+	 * @param pin the desired PIN, or {@code null} to auto-generate / clear
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public void setDevicePIN(Long pin) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdSetDevicePin(pin == null ? 0l : pin),
 				defaultGetTimeout);
@@ -777,9 +999,10 @@ public class MeshcoreCompanionConfig {
 	 * @param telemetryEnvFav   allow environment telemetry from favourites only
 	 * @param advertLocPolicy   how/when to include GPS coordinates in adverts
 	 * @param multiAcks         enable multi-ACK mode (requires protocol v7+)
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void setOtherParams(Boolean manualAddContacts, Boolean telemetryBaseAll, Boolean telemetryBaseFav,
 			Boolean telemetryLocAll, Boolean telemetryLocFav, Boolean telemetryEnvAll, Boolean telemetryEnvFav,
@@ -801,11 +1024,14 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 * @param mode path hash mode 0–2, resulting in 1–3 bytes per hop hash (see
+	 * Sets the flood path-hash mode on the device (firmware v10+) and refreshes the
+	 * cached device info.
+	 *
+	 * @param mode path-hash mode 0–2, corresponding to 1–3 hash bytes per hop (see
 	 *             {@link cz.bliksoft.meshcore.frames.cmd.CmdSetPathHashMode})
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public void setPathHashMode(byte mode) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdSetPathHashMode(mode), defaultGetTimeout);
@@ -815,14 +1041,16 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 * @param freq   frequency in Hz (converted to kHz before sending to firmware)
+	 * Configures the LoRa radio parameters and refreshes the cached device info.
+	 *
+	 * @param freq   frequency in Hz (converted to kHz before sending)
 	 * @param bw     bandwidth in Hz
 	 * @param sf     spreading factor
 	 * @param cr     coding rate
 	 * @param repeat {@code true} to configure the device as a repeater
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public void setRadioParams(long freq, long bw, byte sf, byte cr, boolean repeat)
 			throws IOException, TimeoutException, InterruptedException {
@@ -834,11 +1062,13 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 * @param power TX power in dBm, valid range is -9 to
-	 *              {@link cz.bliksoft.meshcore.frames.resp.SelfInfo#getMaxLoraPowerDbm()}
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * Sets the LoRa TX power and refreshes the cached self-info.
+	 *
+	 * @param power TX power in dBm (valid range: -9 to
+	 *              {@link cz.bliksoft.meshcore.frames.resp.SelfInfo#getMaxLoraPowerDbm()})
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public void setRadioTxPower(byte power) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdSetRadioTXPower(power), defaultGetTimeout);
@@ -848,11 +1078,14 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
+	 * Sets the receiver delay base and airtime estimation factor on the device and
+	 * invalidates the local tuning-params cache.
+	 *
 	 * @param rxDelayBase   base RX window delay multiplier
 	 * @param airtimeFactor airtime estimation factor
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public void setTuningParams(double rxDelayBase, double airtimeFactor)
 			throws IOException, TimeoutException, InterruptedException {
@@ -863,6 +1096,14 @@ public class MeshcoreCompanionConfig {
 		tuningParams = null;
 	}
 
+	/**
+	 * Queries the device for current battery voltage and storage statistics.
+	 *
+	 * @return battery and storage info
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public BattAndStorage getBattAndStorage() throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdGetBattAndStorage(), defaultGetTimeout);
 		if (resp instanceof Error)
@@ -870,6 +1111,14 @@ public class MeshcoreCompanionConfig {
 		return (BattAndStorage) resp;
 	}
 
+	/**
+	 * Queries the device's current clock time.
+	 *
+	 * @return the device's current time as Unix epoch seconds
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public CurrTime getDeviceTime() throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdGetDeviceTime(), defaultGetTimeout);
 		if (resp instanceof Error)
@@ -883,6 +1132,10 @@ public class MeshcoreCompanionConfig {
 	 *
 	 * @param timestamp Unix epoch seconds, or {@code null} to use current system
 	 *                  time
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void setDeviceTime(Long timestamp) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdSetDeviceTime(timestamp), defaultGetTimeout);
@@ -890,6 +1143,14 @@ public class MeshcoreCompanionConfig {
 			throw new CompanionErrorException(resp.toString());
 	}
 
+	/**
+	 * Sets the device's advertised name and refreshes the cached self-info.
+	 *
+	 * @param name the new device name
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public void setAdvertName(String name) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdSetAdvertName(name), defaultGetTimeout);
 		if (resp instanceof Error)
@@ -898,7 +1159,13 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 * Set flood scope transport key. Pass {@code null} to clear (global scope).
+	 * Sets the active flood-scope transport key for the current session. Pass
+	 * {@code null} to clear (revert to global scope).
+	 *
+	 * @param scope 16-byte AES transport key, or {@code null} to clear
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public void setFloodScope(byte[] scope) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdSetFloodScope(scope), defaultGetTimeout);
@@ -906,7 +1173,16 @@ public class MeshcoreCompanionConfig {
 			throw new CompanionErrorException(resp.toString());
 	}
 
-	/** Set the persisted default flood scope. Pass null for both args to clear. */
+	/**
+	 * Sets the persisted default flood scope on the device. Pass {@code null} for
+	 * both arguments to clear the default scope.
+	 *
+	 * @param scopeName  scope name (max 31 chars), or {@code null} to clear
+	 * @param scopeKey16 16-byte AES transport key, or {@code null} to clear
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public void setDefaultFloodScope(String scopeName, byte[] scopeKey16)
 			throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdSetDefaultFloodScope(scopeName, scopeKey16),
@@ -915,7 +1191,15 @@ public class MeshcoreCompanionConfig {
 			throw new CompanionErrorException(resp.toString());
 	}
 
-	/** Get the persisted default flood scope, or null scope if none is set. */
+	/**
+	 * Returns the persisted default flood scope. Both fields of the returned object
+	 * are {@code null} when no default scope is configured.
+	 *
+	 * @return the default flood scope configuration
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public DefaultFloodScope getDefaultFloodScope() throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdGetDefaultFloodScope(), defaultGetTimeout);
 		if (resp instanceof Error)
@@ -923,6 +1207,15 @@ public class MeshcoreCompanionConfig {
 		return (DefaultFloodScope) resp;
 	}
 
+	/**
+	 * Queries device statistics for the given subtype.
+	 *
+	 * @param subtype the statistics subtype to request
+	 * @return the statistics response
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public Stats getStats(StatsCommandFrameSubtype subtype) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdGetStats(subtype), defaultGetTimeout);
 		if (resp instanceof Error)
@@ -932,6 +1225,12 @@ public class MeshcoreCompanionConfig {
 
 	/**
 	 * Add or update a saved contact on the device.
+	 *
+	 * @param contact the contact to add or update
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void addUpdateContact(Contact contact) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(contact.getCmdAddUpdateContact(), defaultGetTimeout);
@@ -944,6 +1243,10 @@ public class MeshcoreCompanionConfig {
 	 * them.
 	 *
 	 * @param pubkey 32-byte public key of the contact to share
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void shareContact(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdShareContact(pubkey), defaultGetTimeout);
@@ -955,6 +1258,11 @@ public class MeshcoreCompanionConfig {
 	 * Fetch the stored outbound advert path for a contact.
 	 *
 	 * @param pubkey 32-byte public key
+	 * @return the stored advert path, or throws if not found
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public AdvertPath getAdvertPath(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdGetAdvertPath(pubkey), defaultGetTimeout);
@@ -972,9 +1280,10 @@ public class MeshcoreCompanionConfig {
 	 * {@link Properties} object. Keys use the {@code device.*} namespace.
 	 *
 	 * @param props target properties (written to, not cleared first)
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void deviceBackup(Properties props) throws IOException, TimeoutException, InterruptedException {
 		deviceBackup(props, DEFAULT_DEVICE_PREFIX);
@@ -987,9 +1296,10 @@ public class MeshcoreCompanionConfig {
 	 * @param props  target properties (written to, not cleared first)
 	 * @param prefix key prefix (e.g. {@code "device"} produces keys like
 	 *               {@code device.name})
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void deviceBackup(Properties props, String prefix)
 			throws IOException, TimeoutException, InterruptedException {
@@ -1065,9 +1375,10 @@ public class MeshcoreCompanionConfig {
 	 * by {@link #deviceBackup(Properties)}.
 	 *
 	 * @param props source properties
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void deviceRestore(Properties props) throws IOException, TimeoutException, InterruptedException {
 		deviceRestore(props, DEFAULT_DEVICE_PREFIX);
@@ -1079,9 +1390,10 @@ public class MeshcoreCompanionConfig {
 	 *
 	 * @param props  source properties
 	 * @param prefix key prefix used during backup (e.g. {@code "device"})
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void deviceRestore(Properties props, String prefix)
 			throws IOException, TimeoutException, InterruptedException {
@@ -1219,9 +1531,10 @@ public class MeshcoreCompanionConfig {
 	 * {@link #channelsBackup(Properties)}.
 	 *
 	 * @param props source properties
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void channelsRestore(Properties props) throws IOException, TimeoutException, InterruptedException {
 		channelsRestore(props, DEFAULT_CHANNELS_PREFIX);
@@ -1233,9 +1546,10 @@ public class MeshcoreCompanionConfig {
 	 *
 	 * @param props  source properties
 	 * @param prefix key prefix used during backup (e.g. {@code "channel"})
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void channelsRestore(Properties props, String prefix)
 			throws IOException, TimeoutException, InterruptedException {
@@ -1257,9 +1571,10 @@ public class MeshcoreCompanionConfig {
 	 * {@link Properties} object. Keys use the {@code contact.N.*} namespace.
 	 *
 	 * @param props target properties (written to, not cleared first)
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void contactsBackup(Properties props) throws IOException, TimeoutException, InterruptedException {
 		contactsBackup(props, DEFAULT_CONTACTS_PREFIX);
@@ -1273,9 +1588,10 @@ public class MeshcoreCompanionConfig {
 	 * @param props  target properties (written to, not cleared first)
 	 * @param prefix key prefix (e.g. {@code "contact"} produces keys like
 	 *               {@code contact.0.advertPacket})
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void contactsBackup(Properties props, String prefix)
 			throws IOException, TimeoutException, InterruptedException {
@@ -1295,9 +1611,10 @@ public class MeshcoreCompanionConfig {
 	 * removed before restoring.
 	 *
 	 * @param props source properties
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void contactsRestore(Properties props) throws IOException, TimeoutException, InterruptedException {
 		contactsRestore(props, DEFAULT_CONTACTS_PREFIX);
@@ -1310,9 +1627,10 @@ public class MeshcoreCompanionConfig {
 	 *
 	 * @param props  source properties
 	 * @param prefix key prefix used during backup (e.g. {@code "contact"})
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @throws IOException          if the transport fails
+	 * @throws TimeoutException     if the device does not respond in time
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public void contactsRestore(Properties props, String prefix)
 			throws IOException, TimeoutException, InterruptedException {

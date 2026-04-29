@@ -6,10 +6,19 @@ import cz.bliksoft.meshcore.frames.group.ContactFrameGroup;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Terminal frame of the contact-sync sequence initiated by
+ * {@link cz.bliksoft.meshcore.frames.cmd.CmdGetContacts}, carrying the
+ * timestamp of the most recent contact update on the device.
+ */
 public class EndOfContacts extends ContactFrameGroup {
 
 	final long lastUpdated;
 
+	/**
+	 * @return Unix timestamp (seconds) of the most recent contact update on the
+	 *         device, or {@code 0} if unavailable
+	 */
 	public long getLastUpdated() {
 		return lastUpdated;
 	}

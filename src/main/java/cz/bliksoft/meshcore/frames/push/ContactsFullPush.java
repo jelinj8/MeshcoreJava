@@ -4,6 +4,10 @@ import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.group.ContactFrameGroup;
 
+/**
+ * Push frame sent by the device when its contact storage is full and no new
+ * contacts can be added until existing ones are removed.
+ */
 public class ContactsFullPush extends ContactFrameGroup {
 
 	public ContactsFullPush(MeshcoreCompanion source, byte[] data) {

@@ -6,16 +6,36 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Response to {@link cz.bliksoft.meshcore.frames.cmd.CmdGetAdvertPath}
+ * containing the stored outbound path to a contact, including its timestamp and
+ * hop-by-hop hash data.
+ */
 public class AdvertPath extends ResponseFrame {
 
+	/**
+	 * Returns the timestamp when this advert was last received by the node.
+	 *
+	 * @return Unix epoch seconds
+	 */
 	public long getTimestamp() {
 		return timestamp;
 	}
 
+	/**
+	 * Returns the number of hops in the stored path to this contact.
+	 *
+	 * @return hop count
+	 */
 	public int getPathLen() {
 		return pathLen;
 	}
 
+	/**
+	 * Returns concatenated node-hash entries for the path.
+	 *
+	 * @return raw path bytes; total length is {@code pathLen × hashSize}
+	 */
 	public byte[] getPath() {
 		return path;
 	}
@@ -34,6 +54,10 @@ public class AdvertPath extends ResponseFrame {
 	 */
 	final byte[] path;
 
+	/**
+	 * @param source the companion that produced this frame; @param data raw frame
+	 *               bytes
+	 */
 	public AdvertPath(MeshcoreCompanion source, byte[] data) {
 		super(source, data);
 		ByteReader br = new ByteReader(data);

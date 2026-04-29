@@ -10,32 +10,63 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Push frame received when a trace-path response arrives, carrying per-hop SNR
+ * readings, an auth code, and a tag that matches the originating
+ * CMD_SEND_TRACE_PATH request.
+ */
 public class TraceDataPush extends ResponseFrame {
 
+	/**
+	 * @return reserved byte from the wire frame (currently unused)
+	 */
 	public byte getReserved() {
 		return reserved;
 	}
 
+	/**
+	 * @return raw encoded path length (number of bytes covering all hop hashes);
+	 *         divide by hash size to get hop count
+	 */
 	public int getPathLen() {
 		return pathLen;
 	}
 
+	/**
+	 * @return flags bitmask; bits [1:0] encode the hash size per hop (path_sz)
+	 */
 	public int getFlags() {
 		return flags;
 	}
 
+	/**
+	 * @return 4-byte tag linking this push to the originating CMD_SEND_TRACE_PATH /
+	 *         RESP_SENT
+	 */
 	public byte[] getTag() {
 		return tag;
 	}
 
+	/**
+	 * @return 4-byte auth code sent with the trace packet to verify path
+	 *         authenticity
+	 */
 	public byte[] getAuthCode() {
 		return authCode;
 	}
 
+	/**
+	 * @return ordered list of per-hop path records, each containing a node hash and
+	 *         SNR reading
+	 */
 	public List<PathRecord> getPath() {
 		return path;
 	}
 
+	/**
+	 * @return SNR to this (receiving) node as a scaled integer; divide by 4.0 to
+	 *         get dB
+	 */
 	public int getFinalSnr4() {
 		return finalSnr4;
 	}

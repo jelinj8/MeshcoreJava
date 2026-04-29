@@ -5,10 +5,17 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.utils.ByteReader;
 
+/**
+ * Response to {@link cz.bliksoft.meshcore.frames.cmd.CmdExportPrivateKey}
+ * exposing the device's 64-byte raw private key material.
+ */
 public class PrivateKey extends ResponseFrame {
 
 	final byte[] privateKey;
 
+	/**
+	 * @return the 64-byte raw private key exported from the device
+	 */
 	public byte[] getPrivateKey() {
 		return privateKey;
 	}

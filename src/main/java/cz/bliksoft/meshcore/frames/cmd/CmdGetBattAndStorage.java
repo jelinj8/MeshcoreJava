@@ -4,6 +4,11 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 
+/**
+ * Command frame that requests the current battery level and storage usage from
+ * the device. Expects a {@link cz.bliksoft.meshcore.frames.resp.BattAndStorage}
+ * response.
+ */
 public class CmdGetBattAndStorage extends CommandFrame {
 
 	@Override

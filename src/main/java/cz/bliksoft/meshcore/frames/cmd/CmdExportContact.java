@@ -5,6 +5,11 @@ import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that requests the device to export a contact as a serialized
+ * advert packet blob. Expects a
+ * {@link cz.bliksoft.meshcore.frames.resp.ExportContact} response.
+ */
 public class CmdExportContact extends CommandFrame {
 
 	final byte[] pubkey;

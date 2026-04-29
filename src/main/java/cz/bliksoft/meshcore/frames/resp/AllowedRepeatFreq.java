@@ -8,8 +8,16 @@ import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 
+/**
+ * Response carrying the allowed repeat-frequency ranges reported by the device,
+ * each expressed as a [minHz, maxHz] pair (up to three ranges).
+ */
 public class AllowedRepeatFreq extends ResponseFrame {
 
+	/**
+	 * @return list of up to three frequency ranges, each a two-element list of
+	 *         [minHz, maxHz]
+	 */
 	public List<List<Long>> getRanges() {
 		return ranges;
 	}

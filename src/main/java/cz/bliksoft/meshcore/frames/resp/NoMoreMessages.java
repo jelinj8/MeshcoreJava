@@ -4,6 +4,11 @@ import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.group.MessageFrameGroup;
 
+/**
+ * Sentinel response indicating that there are no further queued messages to
+ * retrieve in the current {@link cz.bliksoft.meshcore.frames.cmd.CmdSyncNext}
+ * session.
+ */
 public class NoMoreMessages extends MessageFrameGroup {
 
 	public NoMoreMessages(MeshcoreCompanion source, byte[] data) {

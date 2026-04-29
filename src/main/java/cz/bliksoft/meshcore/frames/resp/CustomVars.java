@@ -9,10 +9,18 @@ import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 
+/**
+ * Response to {@link cz.bliksoft.meshcore.frames.cmd.CmdGetCustomVars}
+ * containing the device's custom key-value variables parsed from their
+ * comma-separated wire encoding.
+ */
 public class CustomVars extends ResponseFrame {
 
 	final Map<String, String> variables;
 
+	/**
+	 * @return ordered map of custom variable names to their string values
+	 */
 	public Map<String, String> getVariables() {
 		return variables;
 	}

@@ -6,36 +6,68 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Push frame sent by the device when a path-discovery probe completes, carrying
+ * the outbound and inbound hop sequences to the discovered node together with
+ * its 6-byte key prefix.
+ */
 public class PathDiscoveryResponsePush extends ResponseFrame {
 
+	/**
+	 * @return reserved byte from the wire frame (currently unused)
+	 */
 	public byte getReserved() {
 		return reserved;
 	}
 
+	/**
+	 * @return first 6 bytes of the discovered node's public key, used as the
+	 *         response key for matching
+	 */
 	public byte[] getPrefix6() {
 		return prefix6;
 	}
 
+	/**
+	 * @return number of bytes per hash entry in the outbound path (1, 2, or 3)
+	 */
 	public int getOutHashLength() {
 		return outHashLength;
 	}
 
+	/**
+	 * @return number of hops in the outbound path (this node to discovered node)
+	 */
 	public int getOutPathLength() {
 		return outPathLength;
 	}
 
+	/**
+	 * @return concatenated node-hash entries for the outbound path
+	 */
 	public byte[] getOutPath() {
 		return outPath;
 	}
 
+	/**
+	 * @return number of bytes per hash entry in the inbound (return) path (1, 2, or
+	 *         3)
+	 */
 	public int getInHashLength() {
 		return inHashLength;
 	}
 
+	/**
+	 * @return number of hops in the inbound (return) path (discovered node to this
+	 *         node)
+	 */
 	public int getInPathLength() {
 		return inPathLength;
 	}
 
+	/**
+	 * @return concatenated node-hash entries for the inbound (return) path
+	 */
 	public byte[] getInPath() {
 		return inPath;
 	}

@@ -10,64 +10,118 @@ import cz.bliksoft.meshcore.frames.FrameConstants.TelemetryModeFlags;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Response to {@link cz.bliksoft.meshcore.frames.cmd.CmdDeviceQuery} carrying
+ * the device's own identity and radio configuration: node name, public key,
+ * LoRa parameters, GPS coordinates, and telemetry policy flags.
+ */
 public class SelfInfo extends ResponseFrame {
 
+	/**
+	 * @return advertisement type used by this node
+	 */
 	public AdvertType getAdvertType() {
 		return advertType;
 	}
 
+	/**
+	 * @return configured TX power in dBm
+	 */
 	public int getTxPowerDbm() {
 		return txPowerDbm;
 	}
 
+	/**
+	 * @return maximum LoRa TX power supported by the hardware in dBm
+	 */
 	public int getMaxLoraPowerDbm() {
 		return maxLoraPowerDbm;
 	}
 
+	/**
+	 * @return the node's public key bytes
+	 */
 	public byte[] getPubkey() {
 		return pubkey;
 	}
 
+	/**
+	 * @return latitude in decimal degrees (positive = North)
+	 */
 	public double getLat() {
 		return lat;
 	}
 
+	/**
+	 * @return longitude in decimal degrees (positive = East)
+	 */
 	public double getLon() {
 		return lon;
 	}
 
+	/**
+	 * @return {@code true} if multi-ACK mode is enabled (protocol version 7+)
+	 */
 	public boolean getMultiAcks() {
 		return multiAcks;
 	}
 
+	/**
+	 * @return the advertisement location sharing policy (protocol version 7+)
+	 */
 	public AdvertLocPolicy getAdvertLocPolicy() {
 		return advertLocPolicy;
 	}
 
+	/**
+	 * @return {@code true} if base telemetry is restricted to favourite contacts
+	 *         only
+	 */
 	public boolean isTelemetryModeBaseFav() {
 		return telemetryModeBaseFav;
 	}
 
+	/**
+	 * @return {@code true} if base telemetry sharing is enabled
+	 */
 	public boolean isTelemetryModeBaseEn() {
 		return telemetryModeBaseEn;
 	}
 
+	/**
+	 * @return {@code true} if location telemetry is restricted to favourite
+	 *         contacts only
+	 */
 	public boolean isTelemetryModeLocFav() {
 		return telemetryModeLocFav;
 	}
 
+	/**
+	 * @return {@code true} if location telemetry sharing is enabled
+	 */
 	public boolean isTelemetryModeLocEn() {
 		return telemetryModeLocEn;
 	}
 
+	/**
+	 * @return {@code true} if environment telemetry is restricted to favourite
+	 *         contacts only
+	 */
 	public boolean isTelemetryModeEnvFav() {
 		return telemetryModeEnvFav;
 	}
 
+	/**
+	 * @return {@code true} if environment telemetry sharing is enabled
+	 */
 	public boolean isTelemetryModeEnvEn() {
 		return telemetryModeEnvEn;
 	}
 
+	/**
+	 * @return {@code true} if new contacts must be added manually (auto-add is
+	 *         disabled)
+	 */
 	public boolean isManualAddContacts() {
 		return manualAddContacts;
 	}
@@ -88,14 +142,23 @@ public class SelfInfo extends ResponseFrame {
 		return bw;
 	}
 
+	/**
+	 * @return LoRa spreading factor
+	 */
 	public int getSf() {
 		return sf;
 	}
 
+	/**
+	 * @return LoRa coding rate
+	 */
 	public int getCr() {
 		return cr;
 	}
 
+	/**
+	 * @return human-readable name of this node as configured on the device
+	 */
 	public String getNodeName() {
 		return nodeName;
 	}

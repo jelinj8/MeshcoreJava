@@ -4,6 +4,11 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that imports a contact from a serialized advert packet blob
+ * into the device's contact list. Expects a {@code RESP_OK} or {@code RESP_ERR}
+ * response.
+ */
 public class CmdImportContact extends CommandFrame {
 
 	/**
@@ -13,6 +18,10 @@ public class CmdImportContact extends CommandFrame {
 	 */
 	final byte[] advertPacket;
 
+	/**
+	 * @param advertPacket raw serialized advert packet blob to import; must be a
+	 *                     {@code PAYLOAD_TYPE_ADVERT} packet of at least 98 bytes
+	 */
 	public CmdImportContact(byte[] advertPacket) {
 		this.advertPacket = advertPacket;
 	}

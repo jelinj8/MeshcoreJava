@@ -5,6 +5,11 @@ import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 
+/**
+ * Response to {@link cz.bliksoft.meshcore.frames.cmd.CmdExportContact}
+ * containing the serialized advert packet of the requested contact, ready to be
+ * forwarded via {@link cz.bliksoft.meshcore.frames.cmd.CmdImportContact}.
+ */
 public class ExportContact extends ResponseFrame {
 
 	/**
@@ -13,6 +18,9 @@ public class ExportContact extends ResponseFrame {
 	 */
 	final byte[] advertPacket;
 
+	/**
+	 * @return raw serialized advert packet blob for the exported contact
+	 */
 	public byte[] getAdvertPacket() {
 		return advertPacket;
 	}

@@ -4,6 +4,10 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that sets (or clears) the device's default flood scope used for
+ * outgoing flood-routed packets. Expects a {@code RESP_OK} response.
+ */
 public class CmdSetDefaultFloodScope extends CommandFrame {
 
 	/** Fixed-width field for scope name in the wire format. */

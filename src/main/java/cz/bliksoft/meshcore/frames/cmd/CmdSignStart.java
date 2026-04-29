@@ -4,6 +4,10 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 
+/**
+ * Command frame that initiates a data-signing session on the device. Expects a
+ * {@link cz.bliksoft.meshcore.frames.resp.SignStart} response.
+ */
 public class CmdSignStart extends CommandFrame {
 
 	@Override

@@ -5,10 +5,18 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.group.CommandsWithSentResponse;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that initiates a path discovery request to find a route to a
+ * remote node. Expects a {@link cz.bliksoft.meshcore.frames.resp.Sent}
+ * acknowledgement followed by a {@code PUSH_PATH_DISCOVERY_RESPONSE} push.
+ */
 public class CmdSendPathDiscoveryReq extends CommandsWithSentResponse {
 
 	final byte[] pubkey;
 
+	/**
+	 * @param pubkey 32-byte public key of the target node to discover a path to
+	 */
 	public CmdSendPathDiscoveryReq(byte[] pubkey) {
 		this.pubkey = pubkey;
 	}

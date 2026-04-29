@@ -6,6 +6,10 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that synchronises the device's real-time clock to a given Unix
+ * timestamp. Expects a {@code RESP_OK} response.
+ */
 public class CmdSetDeviceTime extends CommandFrame {
 
 	final long timestamp;

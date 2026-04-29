@@ -4,6 +4,10 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that sets (or auto-generates) the device's pairing PIN. Expects
+ * a {@code RESP_OK} response.
+ */
 public class CmdSetDevicePin extends CommandFrame {
 
 	final long pin;

@@ -4,6 +4,11 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that performs a factory reset of the device. Expects a
+ * {@link cz.bliksoft.meshcore.frames.resp.Ok} or
+ * {@link cz.bliksoft.meshcore.frames.resp.Error} response.
+ */
 public class CmdFactoryReset extends CommandFrame {
 
 	@Override

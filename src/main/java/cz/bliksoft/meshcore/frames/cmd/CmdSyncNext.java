@@ -4,6 +4,12 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 
+/**
+ * Command frame that requests the next queued message from the device. Expects
+ * a {@link cz.bliksoft.meshcore.frames.resp.NoMoreMessages},
+ * {@link cz.bliksoft.meshcore.frames.resp.ChannelMsgRecv}, or
+ * {@link cz.bliksoft.meshcore.frames.resp.ContactMsgRecv} response.
+ */
 public class CmdSyncNext extends CommandFrame {
 
 	@Override

@@ -5,36 +5,70 @@ import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 
+/**
+ * Response to {@link cz.bliksoft.meshcore.frames.cmd.CmdDeviceQuery} containing
+ * firmware version, protocol capabilities, hardware identity, and BLE PIN of
+ * the device.
+ */
 public class DeviceInfo extends ResponseFrame {
 
+	/**
+	 * @return companion protocol version code sent by the firmware (C++
+	 *         {@code FIRMWARE_VER_CODE})
+	 */
 	public int getProtocolVersion() {
 		return protocolVersion;
 	}
 
+	/**
+	 * @return maximum number of contacts the device can store, or {@code -1} if
+	 *         unknown (protocol &lt; 3)
+	 */
 	public int getMaxContacts() {
 		return maxContacts;
 	}
 
+	/**
+	 * @return maximum number of group channels supported, or {@code -1} if unknown
+	 *         (protocol &lt; 3)
+	 */
 	public int getMaxGroupChannels() {
 		return maxGroupChannels;
 	}
 
+	/**
+	 * @return 6-digit BLE PIN; value {@code 1000000} indicates all-zeroes (no PIN
+	 *         set)
+	 */
 	public long getBlePIN() {
 		return blePIN;
 	}
 
+	/**
+	 * @return firmware build date string as reported by the device
+	 */
 	public String getFirmwareBuildDate() {
 		return firmwareBuildDate;
 	}
 
+	/**
+	 * @return device manufacturer string as reported by the firmware
+	 */
 	public String getDeviceManufacturer() {
 		return deviceManufacturer;
 	}
 
+	/**
+	 * @return human-readable firmware version string (e.g. {@code "v1.14.0"})
+	 */
 	public String getFirmwareVersion() {
 		return firmwareVersion;
 	}
 
+	/**
+	 * @return {@code true} if the device supports client-repeat mode (protocol
+	 *         version 9+)
+	 */
 	public boolean isClientRepeat() {
 		return clientRepeat;
 	}

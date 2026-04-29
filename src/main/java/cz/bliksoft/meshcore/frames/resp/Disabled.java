@@ -4,6 +4,10 @@ import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
 import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 
+/**
+ * Sentinel response indicating that the requested feature or command is
+ * disabled on the device.
+ */
 public class Disabled extends ResponseFrame {
 
 	public Disabled(MeshcoreCompanion source, byte[] data) {

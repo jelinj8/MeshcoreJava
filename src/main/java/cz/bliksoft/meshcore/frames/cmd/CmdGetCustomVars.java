@@ -4,6 +4,10 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 
+/**
+ * Command frame that requests all custom variables stored on the device.
+ * Expects a {@link cz.bliksoft.meshcore.frames.resp.CustomVars} response.
+ */
 public class CmdGetCustomVars extends CommandFrame {
 
 	@Override

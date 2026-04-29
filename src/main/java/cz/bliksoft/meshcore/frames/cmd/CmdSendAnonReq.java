@@ -5,11 +5,20 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.group.CommandsWithSentResponse;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that sends an anonymous message to a contact identified by
+ * public key. Expects a sent acknowledgement; no push response is tracked for
+ * anonymous sends.
+ */
 public class CmdSendAnonReq extends CommandsWithSentResponse {
 
 	final byte[] pubkey;
 	final byte[] msgData;
 
+	/**
+	 * @param pubkey  the 32-byte public key of the destination contact
+	 * @param msgData the message payload to send anonymously
+	 */
 	public CmdSendAnonReq(byte[] pubkey, byte[] msgData) {
 		this.pubkey = pubkey;
 		this.msgData = msgData;

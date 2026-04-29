@@ -4,6 +4,10 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that clears the cached outbound path to a contact, forcing the
+ * next send to use flood routing. Does not expect a specific response frame.
+ */
 public class CmdResetPath extends CommandFrame {
 
 	final byte[] pubkey;

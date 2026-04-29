@@ -8,36 +8,68 @@ import cz.bliksoft.meshcore.frames.group.MessageFrameGroup;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Push notification delivered when the device receives a text message on a
+ * channel; covers both V1/V2 ({@code RESP_CHANNEL_MSG_RECV}) and V3
+ * ({@code RESP_CHANNEL_MSG_RECV_V3}) variants.
+ */
 public class ChannelMsgRecv extends MessageFrameGroup {
 
+	/**
+	 * @return the exact response-frame type ({@code RESP_CHANNEL_MSG_RECV} or
+	 *         {@code RESP_CHANNEL_MSG_RECV_V3})
+	 */
 	public ResponseFrameType getType() {
 		return type;
 	}
 
+	/**
+	 * @return raw SNR value from the firmware (signed int8); divide by 4.0 to get
+	 *         dB; only valid for V3 frames
+	 */
 	public int getSnr4() {
 		return snr4;
 	}
 
+	/**
+	 * @return reserved byte 1 from the V3 frame header (always 0 for V1/V2)
+	 */
 	public byte getReserved1() {
 		return reserved1;
 	}
 
+	/**
+	 * @return reserved byte 2 from the V3 frame header (always 0 for V1/V2)
+	 */
 	public byte getReserved2() {
 		return reserved2;
 	}
 
+	/**
+	 * @return zero-based index into the device's channel table
+	 */
 	public int getChannelIdx() {
 		return channelIdx;
 	}
 
+	/**
+	 * @return encoding/type of the message text payload
+	 */
 	public MessageTextType getTextType() {
 		return textType;
 	}
 
+	/**
+	 * @return Unix epoch seconds as reported by the sender
+	 */
 	public long getTimestamp() {
 		return timestamp;
 	}
 
+	/**
+	 * @return {@code true} if the message arrived via a flood route, {@code false}
+	 *         for a direct route
+	 */
 	public boolean isFlood() {
 		return pathLen != 0xFF;
 	}
@@ -51,6 +83,9 @@ public class ChannelMsgRecv extends MessageFrameGroup {
 		return pathLen;
 	}
 
+	/**
+	 * @return decoded text content of the channel message
+	 */
 	public String getText() {
 		return text;
 	}

@@ -4,10 +4,18 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that removes a contact identified by its public key from the
+ * device. Expects a {@link cz.bliksoft.meshcore.frames.resp.Ok} or
+ * {@link cz.bliksoft.meshcore.frames.resp.Error} response.
+ */
 public class CmdRemoveContact extends CommandFrame {
 
 	final byte[] pubkey;
 
+	/**
+	 * @param pubkey public key of the contact to remove
+	 */
 	public CmdRemoveContact(byte[] pubkey) {
 		this.pubkey = pubkey;
 	}

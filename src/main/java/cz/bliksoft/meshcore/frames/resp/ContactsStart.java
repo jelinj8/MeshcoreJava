@@ -5,10 +5,19 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.group.ContactFrameGroup;
 import cz.bliksoft.meshcore.utils.ByteReader;
 
+/**
+ * Response to {@link cz.bliksoft.meshcore.frames.cmd.CmdGetContacts} that opens
+ * a contact-list synchronisation sequence and reports the total number of
+ * contacts to follow.
+ */
 public class ContactsStart extends ContactFrameGroup {
 
 	final long contactsCount;
 
+	/**
+	 * @return total number of {@link Contact} frames that will follow in this
+	 *         synchronisation sequence
+	 */
 	public long getContactsCount() {
 		return contactsCount;
 	}

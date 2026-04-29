@@ -4,6 +4,10 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.AutoAddConfigFlags;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 
+/**
+ * Command frame that sets the contacts auto-add configuration on the device.
+ * Expects an OK response.
+ */
 public class CmdSetAutoaddConfig extends CommandFrame {
 
 	final byte autoaddCfg;

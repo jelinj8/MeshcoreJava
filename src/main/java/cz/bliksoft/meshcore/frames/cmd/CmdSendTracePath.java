@@ -5,6 +5,12 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.group.CommandsWithSentResponse;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that sends a trace-path request along a specific encoded route
+ * to gather per-hop diagnostics. Expects a
+ * {@link cz.bliksoft.meshcore.frames.resp.Sent} acknowledgement followed by a
+ * {@code PUSH_TRACE_DATA} push.
+ */
 public class CmdSendTracePath extends CommandsWithSentResponse {
 
 	final byte[] tag;

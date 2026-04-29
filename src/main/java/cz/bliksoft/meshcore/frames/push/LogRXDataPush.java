@@ -11,18 +11,33 @@ import cz.bliksoft.meshcore.otaframe.OtaUnicastFrame;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Push frame logged by the device for every received over-the-air packet,
+ * carrying SNR, RSSI, and the raw packet bytes so that the host can inspect or
+ * decode all radio traffic.
+ */
 public class LogRXDataPush extends ResponseFrame {
 
 	final int snr4;
 
+	/**
+	 * @return SNR of the received packet as a scaled integer; divide by 4.0 to get
+	 *         dB
+	 */
 	public int getSnr4() {
 		return snr4;
 	}
 
+	/**
+	 * @return RSSI of the received packet in dBm
+	 */
 	public int getRssi() {
 		return rssi;
 	}
 
+	/**
+	 * @return raw over-the-air packet bytes, unparsed
+	 */
 	public byte[] getRawData() {
 		return rawData;
 	}

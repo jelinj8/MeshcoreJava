@@ -4,6 +4,10 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that sends binary data over a mesh channel, using either a
+ * known path or flood routing. Expects a {@code RESP_OK} response.
+ */
 public class CmdSendChannelData extends CommandFrame {
 
 	private static final byte PATH_LEN_FLOOD = (byte) 0xFF;

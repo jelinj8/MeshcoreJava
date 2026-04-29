@@ -4,6 +4,11 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 
+/**
+ * Command frame that retrieves the current radio tuning parameters from the
+ * device. Expects a {@link cz.bliksoft.meshcore.frames.resp.TuningParams}
+ * response.
+ */
 public class CmdGetTuningParams extends CommandFrame {
 
 	@Override

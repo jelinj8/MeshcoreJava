@@ -6,20 +6,38 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Push frame sent by the device when a control-channel data packet is received,
+ * carrying radio signal quality metrics, hop count, and the raw control
+ * payload.
+ */
 public class ControlDataPush extends ResponseFrame {
 
+	/**
+	 * @return SNR of the received packet as a scaled integer; divide by 4.0 to get
+	 *         dB
+	 */
 	public int getLastSnr4() {
 		return lastSnr4;
 	}
 
+	/**
+	 * @return RSSI of the received packet in dBm
+	 */
 	public int getLastRssi() {
 		return lastRssi;
 	}
 
+	/**
+	 * @return number of hops the packet traversed (0 = local broadcast)
+	 */
 	public int getPathLen() {
 		return pathLen;
 	}
 
+	/**
+	 * @return raw control payload bytes
+	 */
 	public byte[] getPayload() {
 		return payload;
 	}

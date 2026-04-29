@@ -33,6 +33,11 @@ public class AutoaddConfig extends ResponseFrame {
 	final byte autoaddConfig;
 	final int autoAddMaxHops;
 
+	/**
+	 * @return raw autoadd configuration bitmask; use
+	 *         {@link #hasFlag(cz.bliksoft.meshcore.frames.FrameConstants.AutoAddConfigFlags)}
+	 *         to test individual bits
+	 */
 	public byte getAutoaddConfig() {
 		return autoaddConfig;
 	}

@@ -6,6 +6,10 @@ import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.TelemetryModeFlags;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that sets miscellaneous device parameters including telemetry
+ * policies, advert location policy, and multi-ack mode. Expects an OK response.
+ */
 public class CmdSetOtherParams extends CommandFrame {
 
 	final boolean manualAddContacts;
@@ -18,6 +22,21 @@ public class CmdSetOtherParams extends CommandFrame {
 	final AdvertLocPolicy advertLocPolicy;
 	final boolean multiAcks;
 
+	/**
+	 * @param manualAddContacts whether contacts must be added manually (disables
+	 *                          auto-add)
+	 * @param telemetryBaseAll  allow base telemetry from all contacts
+	 * @param telemetryBaseFav  allow base telemetry from favourite contacts only
+	 * @param telemetryLocAll   allow location telemetry from all contacts
+	 * @param telemetryLocFav   allow location telemetry from favourite contacts
+	 *                          only
+	 * @param telemetryEnvAll   allow environment telemetry from all contacts
+	 * @param telemetryEnvFav   allow environment telemetry from favourite contacts
+	 *                          only
+	 * @param advertLocPolicy   policy controlling how the device advertises its own
+	 *                          location
+	 * @param multiAcks         whether multi-ack mode is enabled
+	 */
 	public CmdSetOtherParams(boolean manualAddContacts, boolean telemetryBaseAll, boolean telemetryBaseFav,
 			boolean telemetryLocAll, boolean telemetryLocFav, boolean telemetryEnvAll, boolean telemetryEnvFav,
 			AdvertLocPolicy advertLocPolicy, boolean multiAcks) {

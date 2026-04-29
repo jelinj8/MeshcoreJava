@@ -19,6 +19,11 @@ public class AdvertPush extends ContactFrameGroup {
 
 	final byte[] pubkey;
 
+	/**
+	 * Returns the full public key of the contact that re-advertised.
+	 *
+	 * @return 32-byte public key
+	 */
 	public byte[] getPubkey() {
 		return pubkey;
 	}

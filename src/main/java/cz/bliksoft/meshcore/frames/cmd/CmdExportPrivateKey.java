@@ -4,6 +4,11 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 
+/**
+ * Command frame that requests the export of the device's private key. Expects a
+ * {@link cz.bliksoft.meshcore.frames.resp.PrivateKey} response, or
+ * {@link cz.bliksoft.meshcore.frames.resp.Disabled} if the feature is disabled.
+ */
 public class CmdExportPrivateKey extends CommandFrame {
 
 	@Override

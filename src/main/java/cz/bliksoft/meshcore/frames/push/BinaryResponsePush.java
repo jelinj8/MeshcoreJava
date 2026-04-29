@@ -6,18 +6,32 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Push frame received when a remote node replies to a binary request, carrying
+ * the request tag for correlation and the raw binary response payload.
+ */
 public class BinaryResponsePush extends ResponseFrame {
 
 	final byte reserved;
 
+	/**
+	 * @return reserved byte from the wire frame (currently unused)
+	 */
 	public byte getReserved() {
 		return reserved;
 	}
 
+	/**
+	 * @return 4-byte request tag matching the originating CMD_SEND_BINARY_REQ /
+	 *         CMD_SEND_ANON_REQ
+	 */
 	public byte[] getTag() {
 		return tag;
 	}
 
+	/**
+	 * @return raw binary payload returned by the remote node
+	 */
 	public byte[] getFrameData() {
 		return frameData;
 	}

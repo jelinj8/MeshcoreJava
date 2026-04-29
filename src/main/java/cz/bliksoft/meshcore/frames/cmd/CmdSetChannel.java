@@ -5,6 +5,11 @@ import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Command frame that sets the configuration of a mesh channel by its index,
+ * name, and optional key. Expects a {@link cz.bliksoft.meshcore.frames.resp.Ok}
+ * or {@link cz.bliksoft.meshcore.frames.resp.Error} response.
+ */
 public class CmdSetChannel extends CommandFrame {
 
 	final byte id;

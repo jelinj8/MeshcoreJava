@@ -26,6 +26,8 @@ public class ByteReader {
 
 	/**
 	 * Read one byte and return it as an unsigned int (0–255).
+	 *
+	 * @return the byte value in the range 0–255
 	 */
 	public int readUnsignedByte() {
 		return data[index++] & 0xFF;
@@ -33,6 +35,8 @@ public class ByteReader {
 
 	/**
 	 * Read one byte (signed, as Java's {@code byte} type).
+	 *
+	 * @return the signed byte value
 	 */
 	public byte readByte() {
 		return data[index++];
@@ -40,6 +44,8 @@ public class ByteReader {
 
 	/**
 	 * Read one byte and return it as a signed int (-128–127).
+	 *
+	 * @return the byte value in the range -128–127
 	 */
 	public int readSignedByte() {
 		return data[index++];
@@ -60,6 +66,8 @@ public class ByteReader {
 
 	/**
 	 * Read all remaining bytes to the end of the buffer.
+	 *
+	 * @return new byte array containing the remaining bytes
 	 */
 	public byte[] readBytes() {
 		byte[] p = new byte[data.length - index];

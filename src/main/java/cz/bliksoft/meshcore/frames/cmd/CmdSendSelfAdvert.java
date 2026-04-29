@@ -4,6 +4,11 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that sends the device's own advertisement packet to the mesh
+ * network. Expects a {@link cz.bliksoft.meshcore.frames.resp.Ok} or
+ * {@link cz.bliksoft.meshcore.frames.resp.Error} response.
+ */
 public class CmdSendSelfAdvert extends CommandFrame {
 
 	public enum AdvertMethod {
@@ -12,6 +17,10 @@ public class CmdSendSelfAdvert extends CommandFrame {
 
 	final AdvertMethod method;
 
+	/**
+	 * @param method the advertisement propagation method
+	 *               ({@link AdvertMethod#FLOOD} or {@link AdvertMethod#SINGLE})
+	 */
 	public CmdSendSelfAdvert(AdvertMethod method) {
 		this.method = method;
 	}

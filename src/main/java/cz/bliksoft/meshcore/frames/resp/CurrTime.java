@@ -6,10 +6,17 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Response to {@link cz.bliksoft.meshcore.frames.cmd.CmdGetDeviceTime}
+ * reporting the current Unix epoch time as maintained by the device.
+ */
 public class CurrTime extends ResponseFrame {
 
 	final long timestamp;
 
+	/**
+	 * @return current device time as Unix epoch seconds
+	 */
 	public long getTimestamp() {
 		return timestamp;
 	}

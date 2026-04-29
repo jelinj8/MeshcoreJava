@@ -5,6 +5,11 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 
+/**
+ * Command frame that queries device information and negotiates the protocol
+ * version. Expects a {@link cz.bliksoft.meshcore.frames.resp.DeviceInfo}
+ * response.
+ */
 public class CmdDeviceQuery extends CommandFrame {
 
 	@Override

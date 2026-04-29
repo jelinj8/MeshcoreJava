@@ -4,6 +4,10 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that sets the GPS coordinates included in the device's
+ * advertised presence packets. Expects a {@code RESP_OK} response.
+ */
 public class CmdSetAdvertLatLon extends CommandFrame {
 
 	final double lat;

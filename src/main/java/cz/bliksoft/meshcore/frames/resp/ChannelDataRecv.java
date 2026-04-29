@@ -5,12 +5,24 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.group.MessageFrameGroup;
 import cz.bliksoft.meshcore.utils.ByteReader;
 
+/**
+ * Push notification delivered when the device receives a raw data payload on a
+ * channel, carrying the channel index, routing information, data type, and raw
+ * payload bytes.
+ */
 public class ChannelDataRecv extends MessageFrameGroup {
 
+	/**
+	 * @return raw SNR value from the firmware (signed int8); divide by 4.0 to get
+	 *         dB
+	 */
 	public int getSnr4() {
 		return snr4;
 	}
 
+	/**
+	 * @return zero-based index into the device's channel table
+	 */
 	public int getChannelIdx() {
 		return channelIdx;
 	}
@@ -23,6 +35,10 @@ public class ChannelDataRecv extends MessageFrameGroup {
 		return pathLen;
 	}
 
+	/**
+	 * @return {@code true} if the data arrived via a flood route, {@code false} for
+	 *         a direct route
+	 */
 	public boolean isFlood() {
 		return pathLen != 0xFF;
 	}
@@ -32,6 +48,9 @@ public class ChannelDataRecv extends MessageFrameGroup {
 		return dataType;
 	}
 
+	/**
+	 * @return raw data payload bytes for this data frame
+	 */
 	public byte[] getData() {
 		return data;
 	}

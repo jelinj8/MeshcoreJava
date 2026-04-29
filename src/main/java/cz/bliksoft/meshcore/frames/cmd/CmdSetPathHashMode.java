@@ -4,6 +4,11 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 
 /**
+ * Command frame that configures the path-hash mode controlling how many hash
+ * bytes are used per hop during flood routing. Expects a {@code RESP_OK}
+ * response.
+ *
+ * <p>
  * CMD_SET_PATH_HASH_MODE (61, v10+)
  *
  * <p>

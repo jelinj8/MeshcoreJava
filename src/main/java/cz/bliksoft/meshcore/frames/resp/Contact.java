@@ -11,12 +11,25 @@ import cz.bliksoft.meshcore.frames.group.ContactFrameGroup;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Response carrying a full contact record, returned during contact-list
+ * synchronisation ({@code RESP_CONTACT}) or as an unsolicited push for a newly
+ * heard advertiser ({@code PUSH_NEW_ADVERT}).
+ */
 public class Contact extends ContactFrameGroup {
 
+	/**
+	 * @return full public key of the contact
+	 *         ({@link cz.bliksoft.meshcore.Settings#PUBKEY_SIZE} bytes)
+	 */
 	public byte[] getPubkey() {
 		return pubkey;
 	}
 
+	/**
+	 * @return advertiser type of this contact (e.g. CHAT, REPEATER, ROOM_SERVER,
+	 *         SENSOR)
+	 */
 	public AdvertType getType() {
 		return type;
 	}
@@ -52,26 +65,46 @@ public class Contact extends ContactFrameGroup {
 		return ((hashLength - 1) << 6) | pathLength;
 	}
 
+	/**
+	 * @return raw outbound-path bytes (up to
+	 *         {@link cz.bliksoft.meshcore.Settings#MAX_PATH_SIZE} bytes)
+	 */
 	public byte[] getOutPath() {
 		return outPath;
 	}
 
+	/**
+	 * @return human-readable display name of the contact (up to 32 characters)
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * @return Unix epoch seconds of the last received advert from this contact
+	 */
 	public long getAdvertTS() {
 		return advertTS;
 	}
 
+	/**
+	 * @return latitude reported in the contact's last advert, in decimal degrees
+	 */
 	public Double getLat() {
 		return lat;
 	}
 
+	/**
+	 * @return longitude reported in the contact's last advert, in decimal degrees
+	 */
 	public Double getLon() {
 		return lon;
 	}
 
+	/**
+	 * @return Unix epoch seconds of the last modification, used for incremental
+	 *         sync
+	 */
 	public long getLastMod() {
 		return lastMod;
 	}
@@ -155,6 +188,11 @@ public class Contact extends ContactFrameGroup {
 		}
 	}
 
+	/**
+	 * @return a {@link CmdAddUpdateContact} command pre-populated with this
+	 *         contact's data, suitable for importing an unsaved
+	 *         ({@code PUSH_NEW_ADVERT}) contact into the device
+	 */
 	public CmdAddUpdateContact getCmdAddUpdateContact() {
 		return new CmdAddUpdateContact(getBytes());
 	}

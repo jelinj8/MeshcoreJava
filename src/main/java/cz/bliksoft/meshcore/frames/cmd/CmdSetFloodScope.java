@@ -4,6 +4,10 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that sets or clears the active flood scope transport key used
+ * to restrict flood-routed packets. Expects a {@code RESP_OK} response.
+ */
 public class CmdSetFloodScope extends CommandFrame {
 
 	final byte[] scope;

@@ -5,10 +5,18 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.group.CommandsWithSentResponse;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that sends a status request to a contact identified by public
+ * key. Expects a sent acknowledgement followed by a
+ * {@link cz.bliksoft.meshcore.frames.push.StatusResponsePush} push response.
+ */
 public class CmdSendStatusReq extends CommandsWithSentResponse {
 
 	final byte[] pubkey;
 
+	/**
+	 * @param pubkey the 32-byte public key of the destination contact
+	 */
 	public CmdSendStatusReq(byte[] pubkey) {
 		this.pubkey = pubkey;
 	}

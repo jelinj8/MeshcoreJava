@@ -4,6 +4,10 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that sends a raw control data payload to the device for
+ * firmware-defined processing. Does not expect a specific response frame.
+ */
 public class CmdSendControlData extends CommandFrame {
 
 	final byte[] data;

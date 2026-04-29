@@ -4,6 +4,10 @@ import cz.bliksoft.meshcore.companion.MeshcoreCompanion;
 import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 
+/**
+ * Generic success acknowledgement sent by the device when a command completes
+ * without returning data.
+ */
 public class Ok extends ResponseFrame {
 
 	public Ok(MeshcoreCompanion source, byte[] data) {

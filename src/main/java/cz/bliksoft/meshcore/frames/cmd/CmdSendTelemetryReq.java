@@ -5,6 +5,12 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.group.CommandsWithSentResponse;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that requests telemetry data from a remote node or from the
+ * device itself. Expects a {@link cz.bliksoft.meshcore.frames.resp.Sent}
+ * acknowledgement (for remote nodes) or a {@code PUSH_TELEMETRY_RESPONSE} push
+ * (for self-telemetry).
+ */
 public class CmdSendTelemetryReq extends CommandsWithSentResponse {
 
 	final byte[] pubkey;

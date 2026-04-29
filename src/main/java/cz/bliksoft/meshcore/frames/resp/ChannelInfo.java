@@ -9,16 +9,30 @@ import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Response to {@link cz.bliksoft.meshcore.frames.cmd.CmdGetChannel} describing
+ * a single channel slot, including its index, display name, and 128-bit public
+ * key.
+ */
 public class ChannelInfo extends ResponseFrame {
 
+	/**
+	 * @return zero-based channel slot index
+	 */
 	public int getId() {
 		return id;
 	}
 
+	/**
+	 * @return human-readable channel name (up to 32 characters)
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * @return 16-byte (128-bit) public key of the channel
+	 */
 	public byte[] getPubkey() {
 		return pubkey;
 	}
@@ -37,6 +51,10 @@ public class ChannelInfo extends ResponseFrame {
 		pubkey = br.readBytes(16); // only 128-bit supported for now
 	}
 
+	/**
+	 * @return first byte of the SHA-256 digest of the channel's public key, used as
+	 *         a compact channel identifier
+	 */
 	public int getChannelHash() {
 		if (channelHash == -1) {
 			try {

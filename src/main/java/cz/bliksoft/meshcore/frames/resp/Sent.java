@@ -6,16 +6,33 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Confirmation response indicating that the device has successfully transmitted
+ * a message or request, exposing the routing mode, ACK tag, and estimated
+ * delivery timeout.
+ */
 public class Sent extends ResponseFrame {
 
+	/**
+	 * @return {@code true} if the packet was sent as a flood, {@code false} if sent
+	 *         direct
+	 */
 	public boolean isFlood() {
 		return flood;
 	}
 
+	/**
+	 * @return 4-byte ACK hash (for plain messages) or request tag (for login/binary
+	 *         requests); all zeros when no ACK is expected (e.g. CLI data)
+	 */
 	public byte[] getAckIdOrTag() {
 		return tag;
 	}
 
+	/**
+	 * @return estimated timeout in milliseconds after which no ACK or response
+	 *         should be expected
+	 */
 	public long getExpectedTimeout() {
 		return expectedTimeout;
 	}

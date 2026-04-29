@@ -5,6 +5,11 @@ import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that requests the device's contact list, optionally filtered to
+ * contacts updated after a given timestamp. Expects a
+ * {@code RESP_CONTACTS_START} response followed by a stream of contact entries.
+ */
 public class CmdGetContacts extends CommandFrame {
 
 	final Long since;

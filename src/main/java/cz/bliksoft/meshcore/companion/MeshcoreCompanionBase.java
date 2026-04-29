@@ -26,19 +26,44 @@ import cz.bliksoft.meshcore.frames.resp.DeviceInfo;
 import cz.bliksoft.meshcore.frames.resp.SelfInfo;
 
 /**
- * MeshCore Companion client.
+ * Abstract base for MeshCore companion device connections.
  *
- * Design goals: - Single reader thread owns reading/parsing of frames. -
- * Handlers are dispatched to eventExecutor so they never block reading. -
- * Blocking API is safe to call from any thread EXCEPT the reader thread. -
- * Blocking requests are serialized (requestLock) because the protocol has no
- * request-id.
+ * <p>
+ * Design: a single reader thread owns all frame reading and parsing; event
+ * callbacks are dispatched to a dedicated {@code eventExecutor} so listeners
+ * never block the reader. Blocking request/response calls are safe from any
+ * thread except the reader thread itself, and are serialised by an internal
+ * lock because the MeshCore companion protocol has no request-ID field.
+ * </p>
+ *
+ * <p>
+ * Subclasses provide transport-specific implementations of
+ * {@link #sendBinaryFrame} and {@link #getBinaryFrame}, and start the reader
+ * loop by calling {@link #runLoop()} from a dedicated thread.
+ * </p>
+ *
+ * @see MeshcoreCompanion
  */
 public abstract class MeshcoreCompanionBase implements Closeable {
 
+	/**
+	 * Callback interface notified when the companion device becomes ready or
+	 * unavailable. Callbacks are always invoked on the event executor thread.
+	 */
 	public interface AvailabilityListener {
+		/**
+		 * Called when the device has completed initialisation and is ready to accept
+		 * commands.
+		 *
+		 * @param companion the companion that became available
+		 */
 		void onAvailable(MeshcoreCompanionBase companion);
 
+		/**
+		 * Called when the device connection is lost or the companion is closed.
+		 *
+		 * @param companion the companion that became unavailable
+		 */
 		void onUnavailable(MeshcoreCompanionBase companion);
 	}
 
@@ -79,10 +104,21 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	private final Condition availableCondition = requestLock.newCondition();
 	private final List<AvailabilityListener> availabilityListeners = new CopyOnWriteArrayList<>();
 
+	/**
+	 * Registers a listener to be notified when the device becomes available or
+	 * unavailable.
+	 *
+	 * @param l the listener to register
+	 */
 	public void addAvailabilityListener(AvailabilityListener l) {
 		availabilityListeners.add(l);
 	}
 
+	/**
+	 * Removes a previously registered availability listener.
+	 *
+	 * @param l the listener to remove
+	 */
 	public void removeAvailabilityListener(AvailabilityListener l) {
 		availabilityListeners.remove(l);
 	}
@@ -102,10 +138,20 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	 */
 	protected volatile AtomicBoolean available = new AtomicBoolean();
 
+	/**
+	 * Returns the logical name of this companion instance (used in log messages).
+	 *
+	 * @return the companion name
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * Sets the logical name of this companion instance.
+	 *
+	 * @param name the new name
+	 */
 	public void setName(String name) {
 		this.name = name;
 	}
@@ -313,18 +359,45 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	private DeviceInfo deviceInfo = null;
 	private SelfInfo selfInfo = null;
 
+	/**
+	 * Returns the {@link cz.bliksoft.meshcore.frames.resp.DeviceInfo} fetched
+	 * during the device handshake, or {@code null} if the handshake has not
+	 * completed yet.
+	 *
+	 * @return device firmware info, or {@code null}
+	 */
 	public DeviceInfo getDeviceInfo() {
 		return deviceInfo;
 	}
 
+	/**
+	 * Returns the {@link cz.bliksoft.meshcore.frames.resp.SelfInfo} fetched during
+	 * the device handshake, or {@code null} if the handshake has not completed yet.
+	 *
+	 * @return device self-info, or {@code null}
+	 */
 	public SelfInfo getSelfInfo() {
 		return selfInfo;
 	}
 
+	/**
+	 * Re-queries the device for its firmware info and updates the cached value.
+	 *
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public void refreshDeviceInfo() throws IOException, TimeoutException, InterruptedException {
 		deviceInfo = (DeviceInfo) sendFrameWithResult(new CmdDeviceQuery(), 1000);
 	}
 
+	/**
+	 * Re-queries the device for its self-info and updates the cached value.
+	 *
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public void refreshSelfInfo() throws IOException, TimeoutException, InterruptedException {
 		selfInfo = (SelfInfo) sendFrameWithResult(new CmdAppStart("BSMeshcore"), 1000);
 	}

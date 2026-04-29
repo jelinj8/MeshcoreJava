@@ -6,10 +6,18 @@ import cz.bliksoft.meshcore.frames.group.ContactFrameGroup;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Push frame sent by the device when the stored routing path to a known contact
+ * has been updated, carrying the contact's public key so the cached path can be
+ * refreshed.
+ */
 public class PathUpdatedPush extends ContactFrameGroup {
 
 	final byte[] pubkey;
 
+	/**
+	 * @return full public key of the contact whose path was updated
+	 */
 	public byte[] getPubkey() {
 		return pubkey;
 	}

@@ -5,10 +5,17 @@ import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.ErrorFrameResultCode;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 
+/**
+ * Error response returned by the device when a command cannot be executed,
+ * carrying a machine-readable result code.
+ */
 public class Error extends ResponseFrame {
 
 	final ErrorFrameResultCode code;
 
+	/**
+	 * @return the error code describing the reason for the failure
+	 */
 	public ErrorFrameResultCode getCode() {
 		return code;
 	}

@@ -5,16 +5,30 @@ import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 
+/**
+ * Response to {@link cz.bliksoft.meshcore.frames.cmd.CmdGetBattAndStorage}
+ * containing battery voltage and flash-storage statistics reported by the
+ * device.
+ */
 public class BattAndStorage extends ResponseFrame {
 
+	/**
+	 * @return battery voltage in millivolts
+	 */
 	public int getMillivolts() {
 		return millivolts;
 	}
 
+	/**
+	 * @return number of kilobytes currently used on the device's storage
+	 */
 	public long getUsedStorage() {
 		return usedStorage;
 	}
 
+	/**
+	 * @return total storage capacity of the device in kilobytes
+	 */
 	public long getTotalStorage() {
 		return totalStorage;
 	}

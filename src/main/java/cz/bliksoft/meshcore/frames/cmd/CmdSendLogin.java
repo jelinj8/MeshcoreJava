@@ -10,11 +10,21 @@ import cz.bliksoft.meshcore.frames.resp.Sent;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Command frame that sends login credentials (public key and password) to
+ * authenticate with a remote node. Expects a
+ * {@link cz.bliksoft.meshcore.frames.resp.Sent} acknowledgement followed by a
+ * {@code PUSH_LOGIN_SUCCESS} push.
+ */
 public class CmdSendLogin extends CommandsWithSentResponse {
 
 	final byte[] pubkey;
 	final String password;
 
+	/**
+	 * @param pubkey   32-byte public key of the account to log in with
+	 * @param password plaintext password for the account
+	 */
 	public CmdSendLogin(byte[] pubkey, String password) {
 		this.pubkey = pubkey;
 		this.password = password;

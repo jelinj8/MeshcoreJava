@@ -7,6 +7,11 @@ import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 
+/**
+ * Response to {@link cz.bliksoft.meshcore.frames.cmd.CmdGetDefaultFloodScope}
+ * reporting the device's configured default flood scope name and transport key,
+ * if any.
+ */
 public class DefaultFloodScope extends ResponseFrame {
 
 	private static final int SCOPE_NAME_LEN = 31;
@@ -23,6 +28,9 @@ public class DefaultFloodScope extends ResponseFrame {
 		return scopeKey != null ? Arrays.copyOf(scopeKey, scopeKey.length) : null;
 	}
 
+	/**
+	 * @return {@code true} if a default flood scope is configured on the device
+	 */
 	public boolean hasScope() {
 		return scopeName != null;
 	}

@@ -5,10 +5,18 @@ import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that imports a private key into the device. Expects a
+ * {@link cz.bliksoft.meshcore.frames.resp.Ok} or
+ * {@link cz.bliksoft.meshcore.frames.resp.Disabled} response.
+ */
 public class CmdImportPrivateKey extends CommandFrame {
 
 	final byte[] privateKey;
 
+	/**
+	 * @param privateKey the raw private key bytes to import
+	 */
 	public CmdImportPrivateKey(byte[] privateKey) {
 		this.privateKey = privateKey;
 	}

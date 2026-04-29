@@ -7,6 +7,11 @@ import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ContactFlags;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that adds a new contact or updates an existing one on the
+ * device. No response is expected (the device does not send an explicit
+ * acknowledgement for this command).
+ */
 public class CmdAddUpdateContact extends CommandFrame {
 
 	final byte[] pubkey;
@@ -21,6 +26,22 @@ public class CmdAddUpdateContact extends CommandFrame {
 	Double lon;
 	Long lastMod;
 
+	/**
+	 * @param pubkey     the 32-byte public key identifying the contact
+	 * @param type       the advertisement type of the contact
+	 * @param flags      raw contact flags bitmask, see
+	 *                   {@link cz.bliksoft.meshcore.frames.FrameConstants.ContactFlags}
+	 * @param outPathLen the number of hops in the outbound path
+	 * @param outPath    the byte array containing the outbound routing path
+	 * @param name       the display name of the contact (max 32 characters)
+	 * @param advertTS   the advertisement timestamp in seconds
+	 * @param lat        the latitude of the contact, or {@code null} if not
+	 *                   available
+	 * @param lon        the longitude of the contact, or {@code null} if not
+	 *                   available
+	 * @param lastMod    the last-modified timestamp in seconds, or {@code null} if
+	 *                   not available
+	 */
 	public CmdAddUpdateContact(byte[] pubkey, AdvertType type, byte flags, int outPathLen, byte[] outPath, String name,
 			long advertTS, Double lat, Double lon, Long lastMod) {
 		this.rawBytes = null;
@@ -39,6 +60,21 @@ public class CmdAddUpdateContact extends CommandFrame {
 	/**
 	 * Convenience constructor that accepts {@link ContactFlags} varargs instead of
 	 * a raw byte.
+	 *
+	 * @param pubkey       the 32-byte public key identifying the contact
+	 * @param type         the advertisement type of the contact
+	 * @param outPathLen   the number of hops in the outbound path
+	 * @param outPath      the byte array containing the outbound routing path
+	 * @param name         the display name of the contact (max 32 characters)
+	 * @param advertTS     the advertisement timestamp in seconds
+	 * @param lat          the latitude of the contact, or {@code null} if not
+	 *                     available
+	 * @param lon          the longitude of the contact, or {@code null} if not
+	 *                     available
+	 * @param lastMod      the last-modified timestamp in seconds, or {@code null}
+	 *                     if not available
+	 * @param contactFlags zero or more {@link ContactFlags} values to encode into
+	 *                     the flags byte
 	 */
 	public CmdAddUpdateContact(byte[] pubkey, AdvertType type, int outPathLen, byte[] outPath, String name,
 			long advertTS, Double lat, Double lon, Long lastMod, ContactFlags... contactFlags) {
@@ -57,6 +93,10 @@ public class CmdAddUpdateContact extends CommandFrame {
 
 	private final byte[] rawBytes; // null when built from fields
 
+	/**
+	 * @param rawBytes raw frame bytes received from the device; the frame type byte
+	 *                 is overwritten with {@code CMD_ADD_UPDATE_CONTACT}
+	 */
 	public CmdAddUpdateContact(byte[] rawBytes) {
 		this.rawBytes = java.util.Arrays.copyOf(rawBytes, rawBytes.length);
 		this.rawBytes[0] = CommandFrameType.CMD_ADD_UPDATE_CONTACT.code();

@@ -8,8 +8,16 @@ import cz.bliksoft.meshcore.otaframe.OtaGroupFrame;
 import cz.bliksoft.meshcore.otaframe.OtaUnicastFrame;
 
 /**
- * Listener for lower level message processing, with transport-level message
- * data available.
+ * Abstract listener that decodes {@link LogRXDataPush} frames into typed OTA
+ * frames and attempts decryption before dispatching to typed callback methods.
+ *
+ * <p>
+ * Subclass this and override one or more of {@link #onOtaFrame},
+ * {@link #onOtaUnicastTxtFrame}, or {@link #onOtaGroupFrame} to receive
+ * low-level RF data alongside higher-level message events. The
+ * {@link #contentDecrypted} flag indicates whether the most recent callback
+ * carried successfully decrypted payload.
+ * </p>
  */
 public abstract class LowLevelMessageListener implements FrameListener<LogRXDataPush> {
 

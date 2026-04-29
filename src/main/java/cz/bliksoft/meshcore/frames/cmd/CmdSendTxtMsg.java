@@ -9,6 +9,12 @@ import cz.bliksoft.meshcore.frames.group.CommandsWithSentResponse;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Command frame that sends a direct text message to a contact identified by a
+ * 6-byte public key prefix. Expects a
+ * {@link cz.bliksoft.meshcore.frames.resp.Sent} acknowledgement followed by a
+ * {@code PUSH_SEND_CONFIRMED} push.
+ */
 public class CmdSendTxtMsg extends CommandsWithSentResponse {
 
 	/**

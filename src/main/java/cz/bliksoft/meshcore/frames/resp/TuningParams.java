@@ -5,12 +5,23 @@ import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 
+/**
+ * Response to {@link cz.bliksoft.meshcore.frames.cmd.CmdGetTuningParams}
+ * exposing the device's low-level radio scheduling parameters: receive-delay
+ * base and airtime scaling factor.
+ */
 public class TuningParams extends ResponseFrame {
 
+	/**
+	 * @return base receive-delay in seconds (firmware value divided by 1000)
+	 */
 	public double getRxDelayBase() {
 		return rxDelayBase;
 	}
 
+	/**
+	 * @return airtime scaling factor (firmware value divided by 1000)
+	 */
 	public double getAirtimeFactor() {
 		return airtimeFactor;
 	}

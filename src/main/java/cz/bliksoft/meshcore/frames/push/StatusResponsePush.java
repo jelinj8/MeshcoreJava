@@ -6,16 +6,31 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Push frame received when a remote node replies to a status request, carrying
+ * the node's 6-byte key prefix and its raw status payload.
+ */
 public class StatusResponsePush extends ResponseFrame {
 
+	/**
+	 * @return reserved byte from the wire frame (currently unused)
+	 */
 	public byte getReserved() {
 		return reserved;
 	}
 
+	/**
+	 * @return first 6 bytes of the responding node's public key, used as the
+	 *         response key for matching
+	 */
 	public byte[] getPrefix6() {
 		return prefix6;
 	}
 
+	/**
+	 * @return raw status payload returned by the remote node in response to
+	 *         CMD_SEND_STATUS_REQ
+	 */
 	public byte[] getRawData() {
 		return rawData;
 	}

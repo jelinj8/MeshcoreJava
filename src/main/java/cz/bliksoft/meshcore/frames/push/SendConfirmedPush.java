@@ -6,6 +6,11 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Push frame sent by the device when it has received an ACK confirming delivery
+ * of a previously sent message, containing the message tag and measured
+ * round-trip time.
+ */
 public class SendConfirmedPush extends ResponseFrame {
 
 	/**
@@ -15,6 +20,9 @@ public class SendConfirmedPush extends ResponseFrame {
 	 */
 	final byte[] tag;
 
+	/**
+	 * @return 4-byte ACK hash identifying the confirmed message
+	 */
 	public byte[] getTag() {
 		return tag;
 	}

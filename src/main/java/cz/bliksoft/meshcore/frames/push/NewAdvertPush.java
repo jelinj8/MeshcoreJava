@@ -35,14 +35,23 @@ public class NewAdvertPush extends ContactFrameGroup {
 	/** Unix epoch seconds of last modification; used for incremental sync. */
 	final long lastMod;
 
+	/**
+	 * @return full public key of the contact
+	 */
 	public byte[] getPubkey() {
 		return pubkey;
 	}
 
+	/**
+	 * @return advert type (e.g. ROUTER, CLIENT)
+	 */
 	public AdvertType getType() {
 		return type;
 	}
 
+	/**
+	 * @return {@code true} if the given contact flag bit is set in this advert
+	 */
 	public boolean hasFlag(ContactFlags flag) {
 		return (flags & flag.mask()) != 0;
 	}
@@ -70,26 +79,45 @@ public class NewAdvertPush extends ContactFrameGroup {
 		return ((hashLength - 1) << 6) | pathLength;
 	}
 
+	/**
+	 * @return raw encoded outbound path bytes (length = pathLength * hashLength)
+	 */
 	public byte[] getOutPath() {
 		return outPath;
 	}
 
+	/**
+	 * @return display name of the contact (up to 32 characters)
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * @return Unix epoch seconds of the last received advert from this contact
+	 */
 	public long getAdvertTS() {
 		return advertTS;
 	}
 
+	/**
+	 * @return latitude in decimal degrees, or {@code null} if not provided
+	 */
 	public Double getLat() {
 		return lat;
 	}
 
+	/**
+	 * @return longitude in decimal degrees, or {@code null} if not provided
+	 */
 	public Double getLon() {
 		return lon;
 	}
 
+	/**
+	 * @return Unix epoch seconds of the last modification, used for incremental
+	 *         sync
+	 */
 	public long getLastMod() {
 		return lastMod;
 	}

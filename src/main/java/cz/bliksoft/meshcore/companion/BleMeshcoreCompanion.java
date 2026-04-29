@@ -32,11 +32,14 @@ import cz.bliksoft.meshcore.frames.FrameConstants;
 public class BleMeshcoreCompanion extends MeshcoreCompanion {
 	private static final Logger log = Logger.getLogger(BleMeshcoreCompanion.class.getName());
 
-	// Nordic UART Service — standard serial-over-BLE profile
+	/**
+	 * Nordic UART Service (NUS) — base service UUID; standard serial-over-BLE
+	 * profile.
+	 */
 	public static final BluetoothUUID NUS_SERVICE = new BluetoothUUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
-	// TX: phone writes to device (Write Without Response)
+	/** NUS TX characteristic — phone writes to device (Write Without Response). */
 	public static final BluetoothUUID NUS_TX = new BluetoothUUID("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
-	// RX: device sends notifications to phone
+	/** NUS RX characteristic — device sends notifications to the phone. */
 	public static final BluetoothUUID NUS_RX = new BluetoothUUID("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
 
 	/** Scan duration used when connecting (milliseconds). */
@@ -54,6 +57,9 @@ public class BleMeshcoreCompanion extends MeshcoreCompanion {
 	private int rxBufLen = 0;
 
 	/**
+	 * Creates a companion that connects to a MeshCore radio over BLE and
+	 * immediately starts the reader loop.
+	 *
 	 * @param name          companion name (for logging/identity)
 	 * @param deviceAddress BLE MAC address of the MeshCore radio (e.g.
 	 *                      "AA:BB:CC:DD:EE:FF")
@@ -132,6 +138,7 @@ public class BleMeshcoreCompanion extends MeshcoreCompanion {
 
 	// ─── Connection lifecycle ─────────────────────────────────────────────────
 
+	/** Starts the BLE reader thread with exponential back-off reconnection. */
 	protected void startLoop() {
 		this.readerThread = new Thread(() -> {
 			long backoffMs = 500;

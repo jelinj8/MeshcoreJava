@@ -3,6 +3,10 @@ package cz.bliksoft.meshcore.frames.cmd;
 import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 
+/**
+ * Command frame that instructs the device to reboot. Does not expect a
+ * response.
+ */
 public class CmdReboot extends CommandFrame {
 
 	@Override

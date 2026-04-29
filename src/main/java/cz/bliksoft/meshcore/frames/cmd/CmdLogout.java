@@ -4,10 +4,17 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that logs out the user identified by the given public key.
+ * Expects an OK response.
+ */
 public class CmdLogout extends CommandFrame {
 
 	final byte[] pubkey;
 
+	/**
+	 * @param pubkey the 32-byte public key of the user to log out
+	 */
 	public CmdLogout(byte[] pubkey) {
 		this.pubkey = pubkey;
 	}

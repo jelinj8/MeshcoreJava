@@ -6,22 +6,40 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Push frame sent by the device in response to a telemetry request, carrying
+ * the raw telemetry payload together with a 6-byte node prefix used for
+ * response matching.
+ */
 public class TelemetryResponsePush extends ResponseFrame {
 
 	final byte reserved;
 
+	/**
+	 * @return reserved byte from the wire frame (currently unused)
+	 */
 	public byte getReserved() {
 		return reserved;
 	}
 
+	/**
+	 * @return first 6 bytes of the responding node's public key, used as the
+	 *         response key for matching
+	 */
 	public byte[] getPrefix6() {
 		return prefix6;
 	}
 
+	/**
+	 * @return length in bytes of the telemetry payload
+	 */
 	public int getTelemetryLen() {
 		return telemetryLen;
 	}
 
+	/**
+	 * @return raw telemetry payload bytes
+	 */
 	public byte[] getFrameData() {
 		return frameData;
 	}

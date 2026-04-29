@@ -6,6 +6,11 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.utils.ByteReader;
 import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
+/**
+ * Push frame sent by the device when a login attempt succeeds, carrying
+ * permission flags, the server's 6-byte key prefix, and (for firmware v7+) a
+ * timestamp, ACL bits, and firmware version level.
+ */
 public class LoginSuccessPush extends ResponseFrame {
 
 	/**

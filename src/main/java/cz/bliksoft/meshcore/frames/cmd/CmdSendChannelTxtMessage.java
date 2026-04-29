@@ -7,6 +7,10 @@ import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.MessageTextType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
+/**
+ * Command frame that sends a text message to a mesh channel. Does not expect a
+ * specific response frame (fire-and-forget over the channel).
+ */
 public class CmdSendChannelTxtMessage extends CommandFrame {
 
 	/**
@@ -21,6 +25,14 @@ public class CmdSendChannelTxtMessage extends CommandFrame {
 	final long timestamp;
 	final String text;
 
+	/**
+	 * @param txtType   message text type (plain, signed, etc.)
+	 * @param channelId index of the target channel
+	 * @param timestamp Unix epoch seconds; pass {@code null} to use the current
+	 *                  time
+	 * @param text      message text (must fit within {@link #MAX_TEXT_BYTES} UTF-8
+	 *                  bytes)
+	 */
 	public CmdSendChannelTxtMessage(MessageTextType txtType, int channelId, Long timestamp, String text) {
 		this.txtType = txtType;
 		this.channelId = channelId;

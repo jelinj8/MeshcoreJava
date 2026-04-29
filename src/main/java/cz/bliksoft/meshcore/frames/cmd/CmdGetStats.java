@@ -5,10 +5,18 @@ import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.StatsCommandFrameSubtype;
 
+/**
+ * Command frame that retrieves device statistics for the specified subtype.
+ * Expects a {@link cz.bliksoft.meshcore.frames.resp.Stats} or
+ * {@link cz.bliksoft.meshcore.frames.resp.Error} response.
+ */
 public class CmdGetStats extends CommandFrame {
 
 	final StatsCommandFrameSubtype subtype;
 
+	/**
+	 * @param subtype the statistics subtype to request
+	 */
 	public CmdGetStats(StatsCommandFrameSubtype subtype) {
 		this.subtype = subtype;
 	}

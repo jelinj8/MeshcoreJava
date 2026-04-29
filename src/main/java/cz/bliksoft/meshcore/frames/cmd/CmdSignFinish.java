@@ -4,6 +4,12 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 
+/**
+ * Command frame that finalises the active signing session and retrieves the
+ * computed signature. Expects a
+ * {@link cz.bliksoft.meshcore.frames.resp.Signature} or
+ * {@link cz.bliksoft.meshcore.frames.resp.Error} response.
+ */
 public class CmdSignFinish extends CommandFrame {
 
 	@Override
