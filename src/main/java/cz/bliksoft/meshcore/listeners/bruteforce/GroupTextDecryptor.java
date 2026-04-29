@@ -17,7 +17,8 @@ import cz.bliksoft.meshcore.frames.resp.ChannelInfo;
  * <p>
  * Three-stage lookup on every packet:
  * <ol>
- * <li>Known channels — from {@link cz.bliksoft.meshcore.companion.MeshcoreCompanionConfig#getChannels()}</li>
+ * <li>Known channels — from
+ * {@link cz.bliksoft.meshcore.companion.MeshcoreCompanionConfig#getChannels()}</li>
  * <li>Previously discovered channels — from past brute-force runs</li>
  * <li>Background brute-force — started at most once per channel hash</li>
  * </ol>

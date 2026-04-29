@@ -415,8 +415,8 @@ public class FrameConstants {
 	}
 
 	/**
-	 * Bitmask flags stored in
-	 * the {@code flags} field of {@link cz.bliksoft.meshcore.frames.resp.Contact}.
+	 * Bitmask flags stored in the {@code flags} field of
+	 * {@link cz.bliksoft.meshcore.frames.resp.Contact}.
 	 * <p>
 	 * Bit 0: favourite flag. Bits 1–3: per-contact telemetry permission bits (used
 	 * when the corresponding telemetry mode is {@code TELEM_MODE_ALLOW_FLAGS}). The

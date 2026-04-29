@@ -13,7 +13,8 @@ import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 /**
  * Parsed over-the-air packet. Contains the routing header fields common to all
  * packet types. The specific payload is represented by the concrete subclass
- * returned by {@link #parse(cz.bliksoft.meshcore.companion.MeshcoreCompanion, byte[])}.
+ * returned by
+ * {@link #parse(cz.bliksoft.meshcore.companion.MeshcoreCompanion, byte[])}.
  *
  * <p>
  * Wire layout (from Packet.h):
