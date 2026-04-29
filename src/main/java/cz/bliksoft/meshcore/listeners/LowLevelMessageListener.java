@@ -14,7 +14,8 @@ import cz.bliksoft.meshcore.otaframe.OtaUnicastFrame;
 public abstract class LowLevelMessageListener implements FrameListener<LogRXDataPush> {
 
 	/**
-	 * indicates decryption success
+	 * Set to {@code true} after a successful decryption in the most recent
+	 * callback.
 	 */
 	public boolean contentDecrypted = false;
 
@@ -39,27 +40,27 @@ public abstract class LowLevelMessageListener implements FrameListener<LogRXData
 	}
 
 	/**
-	 * called for all types of {@link OtaFrame} frames after decryption attempt
-	 * 
-	 * @param otaFrame
+	 * Called for all OTA frame types after the decryption attempt.
+	 *
+	 * @param otaFrame the parsed OTA frame
 	 */
 	public void onOtaFrame(OtaFrame otaFrame) {
 	};
 
 	/**
-	 * called for text {@link OtaUnicastFrame} after an attempt to decrypt and after
-	 * {@link #onOtaFrame(OtaFrame)}
-	 * 
-	 * @param otaFrame
+	 * Called for unicast text ({@link OtaUnicastFrame}) after a decryption attempt
+	 * and after {@link #onOtaFrame(OtaFrame)}.
+	 *
+	 * @param otaFrame the parsed unicast frame
 	 */
 	public void onOtaUnicastTxtFrame(OtaUnicastFrame otaFrame) {
 	};
 
 	/**
-	 * called for {@link OtaGroupFrame} after an attempt to decrypt and after
-	 * {@link #onOtaFrame(OtaFrame)}
-	 * 
-	 * @param otaFrame
+	 * Called for group ({@link OtaGroupFrame}) frames after a decryption attempt
+	 * and after {@link #onOtaFrame(OtaFrame)}.
+	 *
+	 * @param otaFrame the parsed group frame
 	 */
 	public void onOtaGroupFrame(OtaGroupFrame otaFrame) {
 	};

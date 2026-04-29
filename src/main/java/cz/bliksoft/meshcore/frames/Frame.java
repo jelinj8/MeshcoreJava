@@ -65,10 +65,10 @@ public abstract class Frame {
 
 	/**
 	 * Frame factory from binary data
-	 * 
-	 * @param source
-	 * @param data
-	 * @return
+	 *
+	 * @param source companion that received the frame
+	 * @param data   raw frame bytes (first byte is the type code)
+	 * @return typed frame, or {@code null} if data is null or empty
 	 */
 	public static Frame fromData(MeshcoreCompanion source, byte[] data) {
 		if (data == null || data.length < 1)
@@ -179,9 +179,9 @@ public abstract class Frame {
 	}
 
 	/**
-	 * convert to binary representation
-	 * 
-	 * @return
+	 * Serialize to the binary wire representation.
+	 *
+	 * @return raw frame bytes ready to send or store
 	 */
 	public abstract byte[] getBytes();
 }

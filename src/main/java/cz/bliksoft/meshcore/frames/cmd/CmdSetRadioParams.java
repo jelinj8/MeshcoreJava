@@ -13,12 +13,12 @@ public class CmdSetRadioParams extends CommandFrame {
 	final Boolean repeat;
 
 	/**
-	 * 
-	 * @param freq (Hz) frequency
-	 * @param bw (Hz) bandwidth
-	 * @param sf
-	 * @param cr
-	 * @param repeat act as repeater
+	 * @param freq   frequency in Hz (sent to firmware as kHz)
+	 * @param bw     bandwidth in Hz
+	 * @param sf     LoRa spreading factor
+	 * @param cr     LoRa coding rate
+	 * @param repeat {@code true} to configure the device as a repeater;
+	 *               {@code null} to omit the field (pre-v9 firmware)
 	 */
 	public CmdSetRadioParams(long freq, long bw, byte sf, byte cr, Boolean repeat) {
 		this.freq = freq;
@@ -38,7 +38,7 @@ public class CmdSetRadioParams extends CommandFrame {
 		ByteBuilder bb = new ByteBuilder();
 		bb.put(getTypeCode());
 		bb.putUInt32LE(freq / 1000); // firmware expects kHz
-		bb.putUInt32LE(bw);          // firmware expects Hz
+		bb.putUInt32LE(bw); // firmware expects Hz
 		bb.put(sf);
 		bb.put(cr);
 

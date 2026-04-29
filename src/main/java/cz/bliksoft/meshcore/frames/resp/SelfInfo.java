@@ -73,7 +73,7 @@ public class SelfInfo extends ResponseFrame {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return freq (Hz)
 	 */
 	public long getFreq() {
@@ -81,7 +81,7 @@ public class SelfInfo extends ResponseFrame {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return bandwidth (Hz)
 	 */
 	public long getBw() {
@@ -147,7 +147,8 @@ public class SelfInfo extends ResponseFrame {
 		multiAcks = (companion.getConfig().getProtocolVersion() >= 7) && (multiAcksByte != 0);
 
 		byte advertLocPolicyByte = br.readByte();
-		advertLocPolicy = (companion.getConfig().getProtocolVersion() >= 7) ? AdvertLocPolicy.fromByte(advertLocPolicyByte)
+		advertLocPolicy = (companion.getConfig().getProtocolVersion() >= 7)
+				? AdvertLocPolicy.fromByte(advertLocPolicyByte)
 				: AdvertLocPolicy.ADVERT_LOC_NONE;
 
 		// telemetryMode byte layout (v5+): bits [5:4]=env_mode, bits [3:2]=loc_mode,

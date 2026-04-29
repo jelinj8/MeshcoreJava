@@ -513,20 +513,20 @@ public class FrameConstants {
 	public static final int SERIAL_FRAME_FROM_RADIO = '>';
 	public static final int SERIAL_FRAME_TO_RADIO = '<';
 
-
 	/** Advert app_data flags byte (AdvertDataHelpers.h). */
 	public enum AdvertAppDataFlags {
-		TYPE_MASK((byte) 0x0F),
-		HAS_LATLON((byte) 0x10),
-		HAS_FEAT1((byte) 0x20),
-		HAS_FEAT2((byte) 0x40),
+		TYPE_MASK((byte) 0x0F), HAS_LATLON((byte) 0x10), HAS_FEAT1((byte) 0x20), HAS_FEAT2((byte) 0x40),
 		HAS_NAME((byte) 0x80);
 
 		private final byte mask;
 
-		AdvertAppDataFlags(byte mask) { this.mask = mask; }
+		AdvertAppDataFlags(byte mask) {
+			this.mask = mask;
+		}
 
-		public byte mask() { return mask; }
+		public byte mask() {
+			return mask;
+		}
 	}
 
 }

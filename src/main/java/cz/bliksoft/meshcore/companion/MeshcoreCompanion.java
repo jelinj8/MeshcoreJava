@@ -112,14 +112,18 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	}
 
 	/**
-	 * blocking call, list of expected response types from CommandFrame definition.
-	 * 
-	 * @param payload
-	 * @param timeoutMs
-	 * @return
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * Send a frame and wait for two stages: first the immediate ACK/SENT response,
+	 * then the asynchronous content response (e.g. PUSH_SEND_CONFIRMED). Response
+	 * types are taken from the frame's own
+	 * {@link CommandFrame#expectedResponses()}.
+	 *
+	 * @param payload           command frame to send
+	 * @param timeoutSendMs     maximum wait for the initial ACK/SENT response (ms)
+	 * @param timeoutResponseMs maximum wait for the asynchronous content push (ms)
+	 * @return the asynchronous content response frame
+	 * @throws IOException          if the transport reports an error
+	 * @throws TimeoutException     if either stage times out
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public ResponseFrame sendFrameWithResultAndResponse(CommandFrame payload, long timeoutSendMs,
 			long timeoutResponseMs) throws IOException, TimeoutException, InterruptedException {
@@ -127,15 +131,18 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	}
 
 	/**
-	 * blocking call, waits for specified response frame types.
-	 * 
-	 * @param payload
-	 * @param timeoutSendMs
-	 * @param acceptCodes
-	 * @return
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * Send a frame and wait for two stages using explicit accept codes for the
+	 * initial response. See
+	 * {@link #sendFrameWithResultAndResponse(CommandFrame, long, long)}.
+	 *
+	 * @param payload           command frame to send
+	 * @param timeoutSendMs     maximum wait for the initial ACK/SENT response (ms)
+	 * @param timeoutResponseMs maximum wait for the asynchronous content push (ms)
+	 * @param acceptCodes       byte codes of acceptable initial response types
+	 * @return the asynchronous content response frame
+	 * @throws IOException          if the transport reports an error
+	 * @throws TimeoutException     if either stage times out
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public ResponseFrame sendFrameWithResultAndResponse(CommandFrame payload, long timeoutSendMs,
 			long timeoutResponseMs, byte... acceptCodes) throws IOException, TimeoutException, InterruptedException {
@@ -263,16 +270,19 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	}
 
 	/**
-	 * waits for a response frame of proper type and identification. Only for
-	 * {@link ResponseFrame} with overriden getFrameKey.
-	 * 
-	 * @param type
-	 * @param key     value identifying response frame (prefix6, tag...)
-	 * @param timeout
-	 * @return ResponseFrame to be processed
-	 * @throws InterruptedException
-	 * @throws IOException
-	 * @throws TimeoutException
+	 * Block until a response frame of the given type and identifying key arrives.
+	 * Only works for {@link ResponseFrame} subclasses that override
+	 * {@link ResponseFrame#getFrameKey()}.
+	 *
+	 * @param type    expected response frame type
+	 * @param key     identifying value (e.g. hex prefix6 or tag) used to match the
+	 *                response
+	 * @param timeout maximum wait in milliseconds
+	 * @return the matching response frame
+	 * @throws InterruptedException if the calling thread is interrupted
+	 * @throws IOException          if the connection is lost while waiting
+	 * @throws TimeoutException     if no matching response arrives within the
+	 *                              timeout
 	 */
 	public ResponseFrame waitForResponseFrame(ResponseFrameType type, String key, long timeout)
 			throws InterruptedException, IOException, TimeoutException {
@@ -304,7 +314,7 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 
 	/**
 	 * register a listener. Multiple listeners for the same class can be registered.
-	 * 
+	 *
 	 * @param <T>
 	 * @param frameClass key for list to which the listener will be added. Frames
 	 *                   assignable to the class will be passed to all listeners in

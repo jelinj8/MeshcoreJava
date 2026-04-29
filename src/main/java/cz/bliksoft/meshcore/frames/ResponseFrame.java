@@ -9,19 +9,13 @@ public abstract class ResponseFrame extends Frame {
 	protected final MeshcoreCompanion companion;
 
 	/**
-	 * get a companion that produced the frame
-	 * 
-	 * @return
+	 * Returns the companion instance that received this frame.
 	 */
 	public MeshcoreCompanion getCompanion() {
 		return companion;
 	}
 
-	/**
-	 * raw frame data
-	 * 
-	 * @return
-	 */
+	/** Raw frame bytes as received from the device. */
 	public byte[] getData() {
 		return data;
 	}
@@ -32,18 +26,11 @@ public abstract class ResponseFrame extends Frame {
 		this.receivedAt = System.currentTimeMillis();
 	}
 
-	/**
-	 * expected type of async response
-	 * 
-	 * @return
-	 */
+	/** Returns the frame type code that identifies this response. */
 	public abstract ResponseFrameType getFrameType();
 
 	/**
-	 * check if a ResponseFrameType is expected as a response to this frame
-	 * 
-	 * @param type
-	 * @return
+	 * Returns {@code true} if this frame's type equals {@code type}.
 	 */
 	public boolean is(ResponseFrameType type) {
 		return getFrameType().equals(type);
@@ -70,8 +57,8 @@ public abstract class ResponseFrame extends Frame {
 	}
 
 	/**
-	 * get timestamp when the frame was received/created
-	 * @return
+	 * Returns the {@link System#currentTimeMillis()} timestamp when this frame was
+	 * received.
 	 */
 	public long getReceivedAt() {
 		return receivedAt;
@@ -84,21 +71,20 @@ public abstract class ResponseFrame extends Frame {
 	}
 
 	/**
-	 * key composer for identified frame cache
-	 * 
-	 * @param type
-	 * @param value
-	 * @return
+	 * Compose a cache key from a response type and an identifying value.
+	 *
+	 * @param type  response frame type
+	 * @param value identifying value (e.g. hex prefix6 or tag)
+	 * @return composite key string used in the response-waiter map
 	 */
 	public static String getFrameKey(ResponseFrameType type, String value) {
 		return String.format("%s:%s", MeshcoreUtils.hex(type.code()), value);
 	}
 
 	/**
-	 * Value identifying the response frame for pairing with sent request. E.g.
-	 * prefix6, pubkey or tag. <code>null</code> by default.
-	 * 
-	 * @return
+	 * Returns the composite cache key used to pair this response with a pending
+	 * waiter (e.g. composed from the frame type and prefix6/tag). Returns
+	 * {@code null} by default; override in frames that support async matching.
 	 */
 	public String getFrameKey() {
 		String responseKey = getResponseKey();

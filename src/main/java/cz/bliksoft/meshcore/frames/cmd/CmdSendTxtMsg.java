@@ -12,10 +12,10 @@ import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 public class CmdSendTxtMsg extends CommandsWithSentResponse {
 
 	/**
-	 * Maximum UTF-8 bytes for the message text.
-	 * The serial frame header accounts for 13 bytes, but additional lower-level mesh/LoRa framing
-	 * further reduces usable payload. Value matches the official companion app limit.
-	 * Room/repeater contacts share this limit (their re-signed retransmit fits within it).
+	 * Maximum UTF-8 bytes for the message text. The serial frame header accounts
+	 * for 13 bytes, but additional lower-level mesh/LoRa framing further reduces
+	 * usable payload. Value matches the official companion app limit. Room/repeater
+	 * contacts share this limit (their re-signed retransmit fits within it).
 	 */
 	public static final int MAX_TEXT_BYTES = 150;
 
@@ -26,12 +26,14 @@ public class CmdSendTxtMsg extends CommandsWithSentResponse {
 	final String text;
 
 	/**
-	 * 
-	 * @param txtType
-	 * @param prefix6
-	 * @param attempt   default 0
-	 * @param timestamp default getEpochSecond()
-	 * @param text
+	 * @param txtType   message text type (plain, signed, etc.)
+	 * @param prefix6   6-byte public key prefix of the recipient
+	 * @param attempt   retry attempt counter (0 for first send); pass {@code null}
+	 *                  for 0
+	 * @param timestamp Unix epoch seconds; pass {@code null} to use the current
+	 *                  time
+	 * @param text      message text (must fit within {@link #MAX_TEXT_BYTES} UTF-8
+	 *                  bytes)
 	 */
 	public CmdSendTxtMsg(MessageTextType txtType, byte[] prefix6, Integer attempt, Long timestamp, String text) {
 		this.txtType = txtType;

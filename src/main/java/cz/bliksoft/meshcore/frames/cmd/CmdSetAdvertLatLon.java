@@ -11,11 +11,12 @@ public class CmdSetAdvertLatLon extends CommandFrame {
 	final Integer alt;
 
 	/**
-	 * set device lat/lon, optionally when supported alt
-	 * 
-	 * @param lat
-	 * @param lon
-	 * @param alt
+	 * Set the device's advertised GPS coordinates.
+	 *
+	 * @param lat latitude in decimal degrees
+	 * @param lon longitude in decimal degrees
+	 * @param alt altitude in metres, or {@code null} to omit (not supported by all
+	 *            firmware versions)
 	 */
 	public CmdSetAdvertLatLon(double lat, double lon, Integer alt) {
 		this.lat = lat;

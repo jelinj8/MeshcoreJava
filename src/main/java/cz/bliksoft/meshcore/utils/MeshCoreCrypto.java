@@ -33,7 +33,7 @@ public class MeshCoreCrypto {
 	/** Maximum accepted Unix epoch timestamp (2035-01-01). */
 	public static final long TS_MAX = 2_051_222_400L;
 
-	private static final BigInteger P   = BigInteger.ONE.shiftLeft(255).subtract(BigInteger.valueOf(19));
+	private static final BigInteger P = BigInteger.ONE.shiftLeft(255).subtract(BigInteger.valueOf(19));
 	private static final BigInteger A24 = BigInteger.valueOf(121665); // (A-2)/4, A=486662
 
 	/**
@@ -109,8 +109,10 @@ public class MeshCoreCrypto {
 	 * <li>plaintext = {@code timestamp(uint32LE,4B) + txtType(1B) + text}</li>
 	 * </ul>
 	 *
-	 * @param grpTxtPayload raw GRP_TXT payload (channelHash + 2-byte MAC + ciphertext)
-	 * @param key           16-byte AES-128 channel key (= {@code SHA256("#name")[0..15]})
+	 * @param grpTxtPayload raw GRP_TXT payload (channelHash + 2-byte MAC +
+	 *                      ciphertext)
+	 * @param key           16-byte AES-128 channel key (=
+	 *                      {@code SHA256("#name")[0..15]})
 	 * @return decoded {@link GrpTxtResult}, or {@code null} if MAC/hash/sanity
 	 *         checks fail
 	 */
@@ -177,9 +179,8 @@ public class MeshCoreCrypto {
 	// ---- private helpers ----
 
 	/**
-	 * Convert a 32-byte Ed25519 public key (Edwards compressed y) to the
-	 * Curve25519 Montgomery u-coordinate.
-	 * u = (1 + y) * inverse(1 - y) mod p
+	 * Convert a 32-byte Ed25519 public key (Edwards compressed y) to the Curve25519
+	 * Montgomery u-coordinate. u = (1 + y) * inverse(1 - y) mod p
 	 */
 	private static byte[] edPubToMontgomery(byte[] edPub32) {
 		byte[] yBytes = edPub32.clone();
@@ -191,8 +192,8 @@ public class MeshCoreCrypto {
 	}
 
 	/**
-	 * X25519 scalar multiplication — RFC 7748 Montgomery ladder.
-	 * Re-clamps the scalar before use (matches ed25519_key_exchange behaviour).
+	 * X25519 scalar multiplication — RFC 7748 Montgomery ladder. Re-clamps the
+	 * scalar before use (matches ed25519_key_exchange behaviour).
 	 */
 	private static byte[] x25519(byte[] kBytes, byte[] uBytes) {
 		byte[] e = kBytes.clone();
@@ -215,23 +216,27 @@ public class MeshCoreCrypto {
 			swap ^= b;
 			if (swap != 0) {
 				BigInteger t;
-				t = x2; x2 = x3; x3 = t;
-				t = z2; z2 = z3; z3 = t;
+				t = x2;
+				x2 = x3;
+				x3 = t;
+				t = z2;
+				z2 = z3;
+				z3 = t;
 			}
 			swap = b;
 
-			BigInteger A  = x2.add(z2).mod(P);
+			BigInteger A = x2.add(z2).mod(P);
 			BigInteger AA = A.multiply(A).mod(P);
-			BigInteger B  = x2.subtract(z2).mod(P);
+			BigInteger B = x2.subtract(z2).mod(P);
 			BigInteger BB = B.multiply(B).mod(P);
-			BigInteger E  = AA.subtract(BB).mod(P);
-			BigInteger C  = x3.add(z3).mod(P);
-			BigInteger D  = x3.subtract(z3).mod(P);
+			BigInteger E = AA.subtract(BB).mod(P);
+			BigInteger C = x3.add(z3).mod(P);
+			BigInteger D = x3.subtract(z3).mod(P);
 			BigInteger DA = D.multiply(A).mod(P);
 			BigInteger CB = C.multiply(B).mod(P);
-			BigInteger s  = DA.add(CB).mod(P);
+			BigInteger s = DA.add(CB).mod(P);
 			x3 = s.multiply(s).mod(P);
-			BigInteger d  = DA.subtract(CB).mod(P);
+			BigInteger d = DA.subtract(CB).mod(P);
 			z3 = x1.multiply(d.multiply(d).mod(P)).mod(P);
 			x2 = AA.multiply(BB).mod(P);
 			z2 = E.multiply(AA.add(A24.multiply(E).mod(P)).mod(P)).mod(P);
@@ -239,8 +244,12 @@ public class MeshCoreCrypto {
 
 		if (swap != 0) {
 			BigInteger t;
-			t = x2; x2 = x3; x3 = t;
-			t = z2; z2 = z3; z3 = t;
+			t = x2;
+			x2 = x3;
+			x3 = t;
+			t = z2;
+			z2 = z3;
+			z3 = t;
 		}
 
 		return toLE(x2.multiply(z2.modInverse(P)).mod(P), 32);
@@ -254,7 +263,10 @@ public class MeshCoreCrypto {
 		return new BigInteger(rev);
 	}
 
-	/** Encode a BigInteger as a little-endian byte array of exactly {@code len} bytes. */
+	/**
+	 * Encode a BigInteger as a little-endian byte array of exactly {@code len}
+	 * bytes.
+	 */
 	private static byte[] toLE(BigInteger n, int len) {
 		byte[] be = n.toByteArray(); // big-endian, may have a leading zero sign byte
 		byte[] out = new byte[len];

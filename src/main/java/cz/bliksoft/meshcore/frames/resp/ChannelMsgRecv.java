@@ -43,9 +43,9 @@ public class ChannelMsgRecv extends MessageFrameGroup {
 	}
 
 	/**
-	 * 255=non-flood
-	 * 
-	 * @return
+	 * Raw path-length byte from the firmware. 255 (0xFF) means the message arrived
+	 * via a direct (non-flood) route; any other value is the flood hop count. Use
+	 * {@link #isFlood()} for a boolean check.
 	 */
 	public int getPathLen() {
 		return pathLen;

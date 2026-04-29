@@ -114,10 +114,9 @@ public class MeshcoreCompanionConfig {
 	private Map<String, Contact> contactsArchive = new ConcurrentHashMap<>();
 
 	/**
-	 * get list of unsaved contacts. Either removed from companion or PushAdvertNew
-	 * unsaved.
-	 *
-	 * @return
+	 * Returns contacts that are not saved on the device: contacts removed from the
+	 * device ({@code PUSH_CONTACT_DELETED}) and contacts seen over the air but not
+	 * added ({@code PUSH_NEW_ADVERT}).
 	 */
 	public Map<String, Contact> getContactsArchive() {
 		return contactsArchive;
@@ -365,10 +364,10 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 * Find a saved contact by name (exact match).
-	 * 
-	 * @param name
-	 * @return
+	 * Find a saved contact by exact name match.
+	 *
+	 * @param name contact name to look up
+	 * @return matching contact, or {@code null} if not found
 	 */
 	public Contact getContact(String name) {
 		if (name == null || name.length() == 0 || contacts == null)
@@ -381,10 +380,12 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 * return an unique contact from known contacts, null if not unique or not found
-	 * 
-	 * @param pubkey
-	 * @return
+	 * Find a contact by public key prefix. Searches saved contacts first, then the
+	 * archive.
+	 *
+	 * @param pubkey public key prefix (1–32 bytes) to match
+	 * @return the unique matching contact, or {@code null} if not found or if more
+	 *         than one contact matches
 	 */
 	public Contact getContact(byte[] pubkey) {
 		if (pubkey == null || pubkey.length == 0 || contacts == null)
@@ -416,11 +417,12 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 * list all contacts with given prefix, optionally limited to type. Try archive
-	 * if no saved contacts are found.
-	 * 
-	 * @param pubkey
-	 * @return
+	 * Find all contacts whose public key starts with {@code pubkey}, optionally
+	 * filtered by advert type. Searches both saved contacts and the archive.
+	 *
+	 * @param pubkey public key prefix to match (1–32 bytes)
+	 * @param type   required advert type, or {@code null} to match all types
+	 * @return list of matching contacts (never {@code null}, but may be empty)
 	 */
 	public List<Contact> findContacts(byte[] pubkey, FrameConstants.AdvertType type) {
 		if (pubkey == null || pubkey.length == 0)
@@ -468,12 +470,12 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 * Set a channel in a slot. Set name to null to remove the channel (zero the
-	 * key).
-	 * 
-	 * @param id
-	 * @param name
-	 * @param key
+	 * Set (or clear) a channel slot on the device.
+	 *
+	 * @param id   slot index (0-based)
+	 * @param name channel name, or {@code null} to remove the channel (zeroes the
+	 *             key)
+	 * @param key  16-byte AES channel key
 	 * @throws IOException
 	 * @throws TimeoutException
 	 * @throws InterruptedException
@@ -505,12 +507,12 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 * add a channel to a free slot or update a channel with the same name if the
-	 * key is different
-	 * 
-	 * @param name
-	 * @param key
-	 * @return
+	 * Add a channel to a free slot, or update an existing slot with the same name
+	 * if the key differs.
+	 *
+	 * @param name channel name
+	 * @param key  16-byte AES channel key
+	 * @return the slot index that was written
 	 * @throws IOException
 	 * @throws TimeoutException
 	 * @throws InterruptedException
@@ -568,20 +570,12 @@ public class MeshcoreCompanionConfig {
 		return null;
 	}
 
-	/**
-	 * fetched in device handshake
-	 * 
-	 * @return
-	 */
+	/** Returns the {@link DeviceInfo} fetched during device handshake. */
 	public DeviceInfo getDeviceInfo() {
 		return companion.getDeviceInfo();
 	}
 
-	/**
-	 * fetched in device handshake
-	 * 
-	 * @return
-	 */
+	/** Returns the {@link SelfInfo} fetched during device handshake. */
 	public SelfInfo getSelfInfo() {
 		return companion.getSelfInfo();
 	}
@@ -702,7 +696,7 @@ public class MeshcoreCompanionConfig {
 	/**
 	 * Remove contact from device and main contacts, keep it only in archived
 	 * contacts
-	 * 
+	 *
 	 * @param pubkey 32B
 	 * @throws IOException
 	 * @throws TimeoutException
@@ -737,10 +731,12 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 * 
-	 * @param flags   configured with {@link AutoAddConfigFlags}. Working only if
-	 *                manualAddContacts is set in SelfInfo (by setOtherParams)
-	 * @param maxHops -1 for unlimited
+	 * Configure auto-add behaviour. The per-type bits in {@code flags} only take
+	 * effect when {@code manualAddContacts} is enabled (set via
+	 * {@link #setOtherParams}).
+	 *
+	 * @param flags   bitmask of {@link AutoAddConfigFlags} values
+	 * @param maxHops maximum hop count for auto-add (0–64); pass -1 for unlimited
 	 * @throws IOException
 	 * @throws TimeoutException
 	 * @throws InterruptedException
@@ -771,17 +767,19 @@ public class MeshcoreCompanionConfig {
 	// setFloodScope // TODO as it isn't final in firmware
 
 	/**
-	 * <code>null</code> to keep current value
-	 * 
-	 * @param manualAddContacts
-	 * @param telemetryBaseAll
-	 * @param telemetryBaseFav
-	 * @param telemetryLocAll
-	 * @param telemetryLocFav
-	 * @param telemetryEnvAll
-	 * @param telemetryEnvFav
-	 * @param advertLocPolicy
-	 * @param multiAcks
+	 * Update device other-params (telemetry modes, contact add policy, etc.). Pass
+	 * {@code null} for any parameter to keep the current device value.
+	 *
+	 * @param manualAddContacts require explicit contact approval; {@code false} =
+	 *                          auto-add all
+	 * @param telemetryBaseAll  allow base telemetry from all contacts
+	 * @param telemetryBaseFav  allow base telemetry from favourites only
+	 * @param telemetryLocAll   allow location telemetry from all contacts
+	 * @param telemetryLocFav   allow location telemetry from favourites only
+	 * @param telemetryEnvAll   allow environment telemetry from all contacts
+	 * @param telemetryEnvFav   allow environment telemetry from favourites only
+	 * @param advertLocPolicy   how/when to include GPS coordinates in adverts
+	 * @param multiAcks         enable multi-ACK mode (requires protocol v7+)
 	 * @throws IOException
 	 * @throws TimeoutException
 	 * @throws InterruptedException
@@ -806,8 +804,8 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 * 
-	 * @param mode 0-2 for 1-3B hashes
+	 * @param mode path hash mode 0–2, resulting in 1–3 bytes per hop hash (see
+	 *             {@link cz.bliksoft.meshcore.frames.cmd.CmdSetPathHashMode})
 	 * @throws IOException
 	 * @throws TimeoutException
 	 * @throws InterruptedException
@@ -820,12 +818,11 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 * 
-	 * @param freq   frequency (kHz)
-	 * @param bw     bandwidth (Hz)
-	 * @param sf
-	 * @param cr
-	 * @param repeat act as repeater
+	 * @param freq   frequency in Hz (converted to kHz before sending to firmware)
+	 * @param bw     bandwidth in Hz
+	 * @param sf     spreading factor
+	 * @param cr     coding rate
+	 * @param repeat {@code true} to configure the device as a repeater
 	 * @throws IOException
 	 * @throws TimeoutException
 	 * @throws InterruptedException
@@ -840,8 +837,8 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 * 
-	 * @param power (Dbm), -9 - SelfInfo.maxLoraPowerDbm
+	 * @param power TX power in dBm, valid range is -9 to
+	 *              {@link cz.bliksoft.meshcore.frames.resp.SelfInfo#getMaxLoraPowerDbm()}
 	 * @throws IOException
 	 * @throws TimeoutException
 	 * @throws InterruptedException
@@ -854,9 +851,8 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 *
-	 * @param rxDelayBase
-	 * @param airtimeFactor
+	 * @param rxDelayBase   base RX window delay multiplier
+	 * @param airtimeFactor airtime estimation factor
 	 * @throws IOException
 	 * @throws TimeoutException
 	 * @throws InterruptedException

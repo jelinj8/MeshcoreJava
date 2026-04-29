@@ -9,8 +9,8 @@ public class CmdSetFloodScope extends CommandFrame {
 	final byte[] scope;
 
 	/**
-	 * 
-	 * @param scope 16B or null
+	 * @param scope 16-byte transport key restricting flood scope, or {@code null}
+	 *              to clear (global scope)
 	 */
 	public CmdSetFloodScope(byte[] scope) {
 		this.scope = scope;

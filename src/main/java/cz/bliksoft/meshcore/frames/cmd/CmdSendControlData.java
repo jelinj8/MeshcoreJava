@@ -9,8 +9,8 @@ public class CmdSendControlData extends CommandFrame {
 	final byte[] data;
 
 	/**
-	 * 
-	 * @param data data[0]|0x80 != 0
+	 * @param data control payload; the first byte must have bit 7 (0x80) set as
+	 *             required by the firmware
 	 */
 	public CmdSendControlData(byte[] data) {
 		this.data = data;

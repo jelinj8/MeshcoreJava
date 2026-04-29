@@ -17,7 +17,7 @@ import cz.bliksoft.meshcore.utils.MeshcoreUtils;
  *
  * <p>
  * Wire layout (from Packet.h):
- * 
+ *
  * <pre>
  *   header(1)  = ver[7:6] | payloadType[5:2] | routeType[1:0]
  *   [tc0(2LE) tc1(2LE)]   — present when routeType has transport codes

@@ -9,7 +9,9 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
 /**
  * Reply to CMD_GET_AUTOADD_CONFIG.
  *
- * <p>Frame layout (after response-code byte):
+ * <p>
+ * Frame layout (after response-code byte):
+ *
  * <pre>
  *   [1] autoadd_config  – bitmask, see {@link AutoAddConfigFlags}:
  *         bit 0  OVERWRITE_OLDEST  – overwrite oldest non-favourite contact when full
@@ -21,7 +23,8 @@ import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
  *   [1] autoadd_max_hops – maximum hop count for auto-add (0–64), present from v1.14+
  * </pre>
  *
- * <p>The per-type bits (1–4) only take effect when manual_add_contacts LSB == 1
+ * <p>
+ * The per-type bits (1–4) only take effect when manual_add_contacts LSB == 1
  * (manual contact mode). When manual_add_contacts LSB == 0 all contact types
  * are auto-added unconditionally.
  */
@@ -49,7 +52,7 @@ public class AutoaddConfig extends ResponseFrame {
 		ByteReader br = new ByteReader(data);
 		br.skip();
 		autoaddConfig = br.readByte();
-		if(data.length>2) // v14+
+		if (data.length > 2) // v14+
 			autoAddMaxHops = br.readUnsignedByte();
 		else
 			autoAddMaxHops = 0;
@@ -64,12 +67,8 @@ public class AutoaddConfig extends ResponseFrame {
 	public String toString() {
 		return String.format(
 				"RESP_AUTOADD_CONFIG config=0x%02x (overwriteOldest=%b chat=%b repeater=%b roomServer=%b sensor=%b) maxHops=%d",
-				autoaddConfig,
-				hasFlag(AutoAddConfigFlags.OVERWRITE_OLDEST),
-				hasFlag(AutoAddConfigFlags.CHAT),
-				hasFlag(AutoAddConfigFlags.REPEATER),
-				hasFlag(AutoAddConfigFlags.ROOM_SERVER),
-				hasFlag(AutoAddConfigFlags.SENSOR),
-				autoAddMaxHops);
+				autoaddConfig, hasFlag(AutoAddConfigFlags.OVERWRITE_OLDEST), hasFlag(AutoAddConfigFlags.CHAT),
+				hasFlag(AutoAddConfigFlags.REPEATER), hasFlag(AutoAddConfigFlags.ROOM_SERVER),
+				hasFlag(AutoAddConfigFlags.SENSOR), autoAddMaxHops);
 	}
 }

@@ -10,8 +10,8 @@ public class CmdSendTelemetryReq extends CommandsWithSentResponse {
 	final byte[] pubkey;
 
 	/**
-	 * 
-	 * @param pubkey32 null for self
+	 * @param pubkey 32-byte public key of the target node, or {@code null} to
+	 *               request self-telemetry
 	 */
 	public CmdSendTelemetryReq(byte[] pubkey) {
 		this.pubkey = pubkey;

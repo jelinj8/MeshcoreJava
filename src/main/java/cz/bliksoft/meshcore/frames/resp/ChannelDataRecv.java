@@ -66,8 +66,7 @@ public class ChannelDataRecv extends MessageFrameGroup {
 
 	@Override
 	public String toString() {
-		return String.format("%s channel=%d snr=%.2f pathLen=%d flood=%b dataType=0x%04X dataLen=%d",
-				getFrameType(), channelIdx, snr4 / 4.0, pathLen, isFlood(), dataType,
-				data != null ? data.length : 0);
+		return String.format("%s channel=%d snr=%.2f pathLen=%d flood=%b dataType=0x%04X dataLen=%d", getFrameType(),
+				channelIdx, snr4 / 4.0, pathLen, isFlood(), dataType, data != null ? data.length : 0);
 	}
 }

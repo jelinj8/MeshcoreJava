@@ -11,8 +11,8 @@ public class CmdSetDevicePin extends CommandFrame {
 	public static final long AUTO_PIN = 1000000l;
 
 	/**
-	 * 
-	 * @param pin AUTO_PIN for generated
+	 * @param pin desired PIN value, or {@link #AUTO_PIN} (1 000 000) to let the
+	 *            device generate one
 	 */
 	public CmdSetDevicePin(long pin) {
 		this.pin = pin;

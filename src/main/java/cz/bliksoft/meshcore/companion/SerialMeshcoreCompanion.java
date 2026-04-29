@@ -141,10 +141,10 @@ public class SerialMeshcoreCompanion extends MeshcoreCompanion {
 	}
 
 	/**
-	 * internal synchronized frame sending
-	 * 
-	 * @param payload
-	 * @throws IOException
+	 * Write a serial frame: {@code '<'} marker + u16le length + payload.
+	 *
+	 * @param payload serialized frame bytes
+	 * @throws IOException if the port write fails
 	 */
 	@Override
 	protected synchronized void sendBinaryFrame(byte[] payload) throws IOException {
@@ -162,12 +162,14 @@ public class SerialMeshcoreCompanion extends MeshcoreCompanion {
 	}
 
 	/**
-	 * for Java8 compatibility
-	 * 
-	 * @param in
-	 * @param len
-	 * @return
-	 * @throws IOException
+	 * Read exactly {@code len} bytes from {@code in}, blocking until all bytes are
+	 * available. Replacement for {@code InputStream.readNBytes} which is not
+	 * available on Java 8.
+	 *
+	 * @param in  source stream
+	 * @param len exact number of bytes to read
+	 * @return byte array of the requested length (may be shorter on EOF)
+	 * @throws IOException if the stream reports an error
 	 */
 	private static byte[] readNBytes(InputStream in, int len) throws IOException {
 		byte[] buffer = new byte[len];

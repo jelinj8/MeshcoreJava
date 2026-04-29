@@ -13,9 +13,9 @@ public class ByteBuilder {
 	}
 
 	/**
-	 * add single byte
-	 * 
-	 * @param b
+	 * Append a single byte.
+	 *
+	 * @param b byte to append
 	 */
 	public void put(byte b) {
 		ensure(1);
@@ -23,9 +23,9 @@ public class ByteBuilder {
 	}
 
 	/**
-	 * add bytes
-	 * 
-	 * @param b
+	 * Append a byte array.
+	 *
+	 * @param b bytes to append
 	 */
 	public void put(byte[] b) {
 		ensure(b.length);
@@ -34,10 +34,10 @@ public class ByteBuilder {
 	}
 
 	/**
-	 * add bytes with fixed length, fill missing with zeroes
-	 * 
-	 * @param b
-	 * @param len
+	 * Append {@code b} and zero-pad to exactly {@code len} bytes.
+	 *
+	 * @param b   bytes to write
+	 * @param len total number of bytes written (b.length bytes of data + padding)
 	 */
 	public void put(byte[] b, int len) {
 		ensure(len);
@@ -48,9 +48,9 @@ public class ByteBuilder {
 	}
 
 	/**
-	 * put String as cString
-	 * 
-	 * @param text
+	 * Append a UTF-8 string followed by a null terminator.
+	 *
+	 * @param text string to write
 	 */
 	public void put(String text) {
 		byte[] txt = text.getBytes(StandardCharsets.UTF_8);
@@ -60,10 +60,11 @@ public class ByteBuilder {
 	}
 
 	/**
-	 * put String as cString, truncated if longer
-	 * 
-	 * @param text
-	 * @param maxLen
+	 * Append a UTF-8 C-string truncated to at most {@code maxLen} bytes (including
+	 * the null terminator).
+	 *
+	 * @param text   string to write
+	 * @param maxLen maximum total bytes including the null terminator
 	 */
 	public void put(String text, int maxLen) {
 		byte[] txt = text.getBytes(StandardCharsets.UTF_8);
@@ -78,10 +79,12 @@ public class ByteBuilder {
 	}
 
 	/**
-	 * put String as cString, fill with zeroes if shorter
-	 * 
-	 * @param text
-	 * @param length
+	 * Append a UTF-8 string as a fixed-width null-terminated field, zero-padded to
+	 * exactly {@code length} bytes.
+	 *
+	 * @param text   string to write
+	 * @param length exact number of bytes to write (truncated or padded with zeroes
+	 *               as needed)
 	 */
 	public void putFixed(String text, int length) {
 		ensure(length);
@@ -93,9 +96,9 @@ public class ByteBuilder {
 	}
 
 	/**
-	 * put int32 (LE)
-	 * 
-	 * @param value
+	 * Append a signed 32-bit integer in little-endian byte order.
+	 *
+	 * @param value value to write
 	 */
 	public void putInt32LE(int value) {
 		ensure(4);
@@ -103,9 +106,9 @@ public class ByteBuilder {
 	}
 
 	/**
-	 * put uint32
-	 * 
-	 * @param value
+	 * Append an unsigned 32-bit integer in little-endian byte order.
+	 *
+	 * @param value value to write (must be in range 0–0xFFFFFFFFL)
 	 */
 	public void putUInt32LE(long value) {
 		if (value < 0 || value > 0xFFFFFFFFL)
@@ -115,9 +118,7 @@ public class ByteBuilder {
 	}
 
 	/**
-	 * get resulting byte[]
-	 * 
-	 * @return
+	 * Returns the accumulated bytes as a new array of exactly the right size.
 	 */
 	public byte[] toArray() {
 		return java.util.Arrays.copyOf(buf, size);

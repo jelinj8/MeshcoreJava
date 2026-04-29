@@ -23,8 +23,9 @@ public class BinaryResponsePush extends ResponseFrame {
 	}
 
 	/**
-	 * Request tag — matches {@link cz.bliksoft.meshcore.frames.resp.Sent#getAckIdOrTag()}
-	 * of the originating CMD_SEND_BINARY_REQ / CMD_SEND_ANON_REQ.
+	 * Request tag — matches
+	 * {@link cz.bliksoft.meshcore.frames.resp.Sent#getAckIdOrTag()} of the
+	 * originating CMD_SEND_BINARY_REQ / CMD_SEND_ANON_REQ.
 	 */
 	final byte[] tag;
 	/** Raw binary payload returned by the remote node. */

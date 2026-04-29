@@ -40,8 +40,8 @@ public abstract class CommandFrame extends Frame {
 	}
 
 	/**
-	 * 
-	 * @return expected response type. First condition for waiting for response.
+	 * Returns the expected async content-response type, or {@code null} if this
+	 * command has no two-stage response.
 	 */
 	public ResponseFrameType getExpectedResponseFrameType() {
 		return null;
@@ -50,7 +50,7 @@ public abstract class CommandFrame extends Frame {
 	/**
 	 * key value to listen for to get response frame if supported. Can store
 	 * response frame for timeout calculation.
-	 * 
+	 *
 	 * @return null if not supported or not expecting a response. callResult will be
 	 *         returned immediately in that case with no registration of listener.
 	 */
@@ -59,9 +59,8 @@ public abstract class CommandFrame extends Frame {
 	}
 
 	/**
-	 * suggested response wait timeout, null for unknown
-	 * 
-	 * @return
+	 * Returns a suggested timeout in milliseconds for the async content response,
+	 * or {@code null} to use the caller-supplied default.
 	 */
 	public Long getExpectedResponseTimeout() {
 		return null;

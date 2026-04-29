@@ -22,7 +22,7 @@ import cz.bliksoft.meshcore.utils.MeshcoreUtils;
  *
  * <p>
  * Encryption chain (from firmware Utils.cpp / Mesh.cpp):
- * 
+ *
  * <pre>
  *   key         = SHA256("#channelName")[0..15]   (16-byte AES-128 key)
  *   channelHash = SHA256(key)[0]                  (1-byte packet prefix)

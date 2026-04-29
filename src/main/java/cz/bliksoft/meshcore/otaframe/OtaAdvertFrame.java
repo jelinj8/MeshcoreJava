@@ -15,7 +15,7 @@ import cz.bliksoft.meshcore.utils.MeshcoreUtils;
  *
  * <p>
  * app_data layout:
- * 
+ *
  * <pre>
  *   flags(1)              adv_type[3:0], HAS_LATLON[4], HAS_FEAT1[5], HAS_FEAT2[6], HAS_NAME[7]
  *   [lat(4 LE) lon(4 LE)] when HAS_LATLON

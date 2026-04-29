@@ -56,10 +56,10 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	protected volatile Thread readerThread = null;
 
 	/**
-	 * internal synchronized frame sending, send a whole frame.
-	 * 
-	 * @param payload
-	 * @throws IOException
+	 * Write a complete serial frame to the transport (synchronized by the caller).
+	 *
+	 * @param payload serialized frame bytes
+	 * @throws IOException if the transport reports an error
 	 */
 	abstract protected void sendBinaryFrame(byte[] payload) throws IOException;
 
@@ -116,10 +116,10 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	// ----------------- Core concurrency: send + await response -----------------
 
 	/**
-	 * non blocking call (does not wait for response)
-	 * 
-	 * @param payload
-	 * @throws IOException
+	 * Send a frame without waiting for a response (fire-and-forget).
+	 *
+	 * @param payload frame to send
+	 * @throws IOException if the underlying transport reports an error
 	 */
 	public void sendFrame(Frame payload) throws IOException {
 		requestLock.lock();
@@ -133,14 +133,17 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	}
 
 	/**
-	 * blocking call, list of expected response types from CommandFrame definition.
-	 * 
-	 * @param payload
-	 * @param timeoutMs
-	 * @return
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * Send a frame and block until one of the response types declared by the frame
+	 * arrives, or the timeout expires.
+	 *
+	 * @param payload   command frame to send
+	 * @param timeoutMs maximum time to wait for the response (milliseconds)
+	 * @return the matching response frame
+	 * @throws IOException          if the transport reports an error
+	 * @throws TimeoutException     if no matching response arrives within the
+	 *                              timeout
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public ResponseFrame sendFrameWithResult(CommandFrame payload, long timeoutMs)
 			throws IOException, TimeoutException, InterruptedException {
@@ -148,15 +151,17 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	}
 
 	/**
-	 * blocking call, waits for specified response frame types.
-	 * 
-	 * @param payload
-	 * @param timeoutMs
-	 * @param acceptCodes
-	 * @return
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * Send a frame and block until one of the specified response codes arrives.
+	 *
+	 * @param payload     command frame to send
+	 * @param timeoutMs   maximum time to wait for the response (milliseconds)
+	 * @param acceptCodes byte codes of acceptable response types
+	 * @return the matching response frame
+	 * @throws IOException          if the transport reports an error
+	 * @throws TimeoutException     if no matching response arrives within the
+	 *                              timeout
+	 * @throws InterruptedException if the calling thread is interrupted while
+	 *                              waiting
 	 */
 	public ResponseFrame sendFrameWithResult(CommandFrame payload, long timeoutMs, byte... acceptCodes)
 			throws IOException, TimeoutException, InterruptedException {
@@ -199,11 +204,11 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	}
 
 	/**
-	 * Wait for event loop to start up, mainly for internal use.
-	 * 
-	 * @param timeoutMs
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * Wait for the reader loop thread to signal that it has started (internal use).
+	 *
+	 * @param timeoutMs maximum wait in milliseconds
+	 * @throws TimeoutException     if the loop does not start in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	protected void awaitRunning(long timeoutMs) throws TimeoutException, InterruptedException {
 		long deadline = System.currentTimeMillis() + timeoutMs;
@@ -217,12 +222,12 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	}
 
 	/**
-	 * Wait for event loop to start up and finish initialization (after each
-	 * reconnect). This is the way to check for device OK on startup.
+	 * Block until the device has completed initialization after (re)connect. This
+	 * is the canonical way to wait for the companion to be ready at startup.
 	 *
-	 * @param timeoutMs
-	 * @throws TimeoutException
-	 * @throws InterruptedException
+	 * @param timeoutMs maximum wait in milliseconds
+	 * @throws TimeoutException     if the device does not become available in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public void awaitAvailable(long timeoutMs) throws TimeoutException, InterruptedException {
 		if (available.get())
@@ -242,10 +247,9 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	}
 
 	/**
-	 * check if the Meshcore companion device is connected and available to accept
-	 * commands (initialized)
-	 * 
-	 * @return
+	 * Returns {@code true} if the companion device is connected and has completed
+	 * initialization (handshake + {@link #deviceInit}) and is ready to accept
+	 * commands.
 	 */
 	public boolean isAvailable() {
 		return available.get();
@@ -254,7 +258,7 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	/**
 	 * Main Meshcore input point. Keep running in its own thread, do not block by
 	 * waiting for events (they will not trigger if blocked!)
-	 * 
+	 *
 	 * @throws IOException
 	 * @throws InterruptedException
 	 * @throws TimeoutException
@@ -322,7 +326,7 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 
 	/**
 	 * initial protocol handshake, loop not yet running
-	 * 
+	 *
 	 * @throws IOException
 	 * @throws InterruptedException
 	 * @throws TimeoutException
@@ -335,7 +339,7 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	/**
 	 * additional initialization in online mode (e.g. set time), this is the place
 	 * to initialize after connection.
-	 * 
+	 *
 	 * @throws IOException
 	 */
 	protected void deviceInit() throws IOException {
@@ -349,10 +353,10 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	}
 
 	/**
-	 * call when source device becomes unavailable/disconnected. Be sure to call
-	 * this base as it does cleanup!
+	 * Called when the source device becomes unavailable or disconnects. Subclass
+	 * overrides must call {@code super.onDeviceDisconnected(cause)} for cleanup.
 	 *
-	 * @param cause
+	 * @param cause the exception that triggered the disconnect
 	 */
 	protected void onDeviceDisconnected(Exception cause) {
 		available.set(false);
@@ -430,10 +434,10 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	}
 
 	/**
-	 * process data frame received from device
-	 * 
-	 * @param data
-	 * @throws IOException
+	 * Parse raw bytes from the device and dispatch the resulting frame.
+	 *
+	 * @param data raw frame bytes (first byte is the type code)
+	 * @throws IOException if dispatch fails
 	 */
 	protected void dispatchFrame(byte[] data) throws IOException {
 		ResponseFrame f = (ResponseFrame) Frame.fromData((MeshcoreCompanion) this, data);
@@ -441,11 +445,11 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	}
 
 	/**
-	 * Process received frame.
-	 * 
-	 * @param frame
-	 * @return true if processed
-	 * @throws IOException
+	 * Dispatch a parsed frame to any registered pending request.
+	 *
+	 * @param frame parsed frame to dispatch
+	 * @return {@code true} if the frame was consumed by a pending request
+	 * @throws IOException if dispatch fails
 	 */
 	protected boolean dispatchFrame(ResponseFrame frame) throws IOException {
 		if (frame == null)

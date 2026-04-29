@@ -8,9 +8,9 @@ public class ByteReader {
 	private int index = 0;
 
 	/**
-	 * initialize reader with data
-	 * 
-	 * @param data
+	 * Wrap a byte array for sequential reading.
+	 *
+	 * @param data bytes to read from
 	 */
 	public ByteReader(byte[] data) {
 		this.data = data;
@@ -25,37 +25,31 @@ public class ByteReader {
 	}
 
 	/**
-	 * read byte as unsigned int
-	 * 
-	 * @return
+	 * Read one byte and return it as an unsigned int (0–255).
 	 */
 	public int readUnsignedByte() {
 		return data[index++] & 0xFF;
 	}
 
 	/**
-	 * read byte
-	 * 
-	 * @return
+	 * Read one byte (signed, as Java's {@code byte} type).
 	 */
 	public byte readByte() {
 		return data[index++];
 	}
 
 	/**
-	 * read byte as signed int
-	 * 
-	 * @return
+	 * Read one byte and return it as a signed int (-128–127).
 	 */
 	public int readSignedByte() {
 		return data[index++];
 	}
 
 	/**
-	 * read byte count
-	 * 
-	 * @param length
-	 * @return
+	 * Read exactly {@code length} bytes.
+	 *
+	 * @param length number of bytes to read
+	 * @return new byte array of the requested length
 	 */
 	public byte[] readBytes(int length) {
 		byte[] p = new byte[length];
@@ -65,9 +59,7 @@ public class ByteReader {
 	}
 
 	/**
-	 * read all remaining bytes
-	 * 
-	 * @return
+	 * Read all remaining bytes to the end of the buffer.
 	 */
 	public byte[] readBytes() {
 		byte[] p = new byte[data.length - index];
@@ -89,9 +81,8 @@ public class ByteReader {
 	}
 
 	/**
-	 * read unsigned Int32 (little-endian)
-	 * 
-	 * @return
+	 * Read an unsigned 16-bit integer (little-endian) and return it as a
+	 * non-negative int (0–65535).
 	 */
 	public int readUInt16LE() {
 		if (index < 0 || index + 2 > data.length)
@@ -103,9 +94,8 @@ public class ByteReader {
 	}
 
 	/**
-	 * read unsigned Int32 (little-endian)
-	 *
-	 * @return
+	 * Read an unsigned 32-bit integer (little-endian) and return it as a
+	 * non-negative long (0–0xFFFFFFFFL).
 	 */
 	public long readUInt32LE() {
 		if (index < 0 || index + 4 > data.length)
@@ -122,9 +112,8 @@ public class ByteReader {
 	}
 
 	/**
-	 * read signed Int32 (little-endian)
-	 * 
-	 * @return
+	 * Read a signed 32-bit integer (little-endian) and return it as a long
+	 * (sign-extended).
 	 */
 	public long readInt32LE() {
 		int result = (data[index] & 0xFF) | ((data[index + 1] & 0xFF) << 8) | ((data[index + 2] & 0xFF) << 16)
@@ -134,10 +123,11 @@ public class ByteReader {
 	}
 
 	/**
-	 * read string up to null char, maxSize bytes or data end
-	 * 
-	 * @param maxSize
-	 * @return
+	 * Read a null-terminated UTF-8 string from a fixed-width field. Always advances
+	 * the cursor by {@code maxSize} bytes regardless of string length.
+	 *
+	 * @param maxSize total field width in bytes (including the null terminator)
+	 * @return decoded string (without null terminator)
 	 */
 	public String readFixedCString(int maxSize) {
 		int end = index;

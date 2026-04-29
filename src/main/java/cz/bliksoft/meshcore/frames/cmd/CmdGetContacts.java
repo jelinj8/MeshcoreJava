@@ -11,7 +11,7 @@ public class CmdGetContacts extends CommandFrame {
 
 	/**
 	 * contacts request
-	 * 
+	 *
 	 * @param since optional (nullable) timestamp to filter newer contacts
 	 */
 	public CmdGetContacts(Long since) {

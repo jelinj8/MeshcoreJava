@@ -13,12 +13,11 @@ public class CmdSendTracePath extends CommandsWithSentResponse {
 	final byte[] path;
 
 	/**
-	 * 
-	 * @param tag
-	 * @param auth
-	 * @param payload
-	 * @param flags   2LSB = path size (1-3)
-	 * @param path
+	 * @param tag   4-byte trace tag used to match the response push
+	 * @param auth  32-bit auth value (passed to firmware, meaning is
+	 *              firmware-defined)
+	 * @param flags bits [1:0] = path-hash size (1–3 bytes per hop)
+	 * @param path  encoded outbound path bytes
 	 */
 	public CmdSendTracePath(byte[] tag, long auth, byte flags, byte[] path) {
 		this.tag = tag;
@@ -53,5 +52,5 @@ public class CmdSendTracePath extends CommandsWithSentResponse {
 	public ResponseFrameType getExpectedResponseFrameType() {
 		return ResponseFrameType.PUSH_TRACE_DATA;
 	}
-	
+
 }

@@ -9,9 +9,10 @@ public class CmdResetPath extends CommandFrame {
 	final byte[] pubkey;
 
 	/**
-	 * reset path to node
-	 * 
-	 * @param pubkey32 full pubkey32
+	 * Clear the cached outbound path to a contact, forcing the next send to use
+	 * flood routing.
+	 *
+	 * @param pubkey full 32-byte public key of the contact
 	 */
 	public CmdResetPath(byte[] pubkey) {
 		this.pubkey = pubkey;

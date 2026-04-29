@@ -77,10 +77,10 @@ public class Contact extends ContactFrameGroup {
 	}
 
 	/**
-	 * indicates added contact. false for new_advert (not added contact), then it
-	 * can be used to add the adverted contact.
-	 * 
-	 * @return
+	 * Returns {@code true} when this contact is saved on the device. Returns
+	 * {@code false} for contacts received via {@code PUSH_NEW_ADVERT} (seen over
+	 * the air but not yet added); such contacts can be imported via
+	 * {@link #getCmdAddUpdateContact()}.
 	 */
 	public boolean isSaved() {
 		return saved;

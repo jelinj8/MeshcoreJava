@@ -12,7 +12,8 @@ public class CmdExportContact extends CommandFrame {
 	/**
 	 * Export a contact as a serialized advert Packet blob (RESP_EXPORT_CONTACT).
 	 *
-	 * @param pubkey 32-byte public key of the contact to export, or {@code null} to export self
+	 * @param pubkey 32-byte public key of the contact to export, or {@code null} to
+	 *               export self
 	 */
 	public CmdExportContact(byte[] pubkey) {
 		this.pubkey = pubkey;

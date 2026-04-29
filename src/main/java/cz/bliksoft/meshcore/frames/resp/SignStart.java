@@ -22,7 +22,7 @@ public class SignStart extends ResponseFrame {
 		super(source, data);
 		ByteReader br = new ByteReader(data);
 		br.skip();
-		
+
 		reserved = br.readByte();
 		maxDataLength = br.readUInt32LE();
 	}

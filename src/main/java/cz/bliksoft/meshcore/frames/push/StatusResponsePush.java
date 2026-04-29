@@ -21,9 +21,15 @@ public class StatusResponsePush extends ResponseFrame {
 	}
 
 	final byte reserved;
-	/** First 6 bytes of the responding node's public key; used as response key for matching. */
+	/**
+	 * First 6 bytes of the responding node's public key; used as response key for
+	 * matching.
+	 */
 	final byte[] prefix6;
-	/** Raw status payload returned by the remote node in response to CMD_SEND_STATUS_REQ. */
+	/**
+	 * Raw status payload returned by the remote node in response to
+	 * CMD_SEND_STATUS_REQ.
+	 */
 	final byte[] rawData;
 
 	public StatusResponsePush(MeshcoreCompanion source, byte[] data) {
