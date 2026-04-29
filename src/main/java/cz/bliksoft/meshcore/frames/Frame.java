@@ -58,6 +58,9 @@ public abstract class Frame {
 
 	/**
 	 * check if the frame is of specified type
+	 *
+	 * @param type raw type byte to compare against
+	 * @return true if this frame's type code equals {@code type}
 	 */
 	public boolean is(byte type) {
 		return getTypeCode() == type;

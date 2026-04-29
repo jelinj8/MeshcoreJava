@@ -9,7 +9,7 @@ import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 /**
  * Sent when a known contact re-advertises. Contains only the public key; use
- * {@link cz.bliksoft.meshcore.companion.MeshcoreCompanion#getContact} to look
+ * {@link cz.bliksoft.meshcore.companion.MeshcoreCompanionConfig#getContact(String)} to look
  * up the cached contact info, or issue CMD_GET_CONTACT_BY_KEY to refresh.
  *
  * @see NewAdvertPush for the first-seen / updated-info variant

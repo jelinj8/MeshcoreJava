@@ -69,7 +69,7 @@ public class OtaUnicastFrame extends OtaFrame {
 	 * {@code [timestamp(4)] [flags(1)] [text...] [null?] [zero-padding]}.
 	 * {@code flags = attempt & 3} — upper 6 bits encode TXT_TYPE (0 = plain).
 	 *
-	 * @param senderPubKey 32-byte Ed25519 public key of the sender
+	 * @param contact      contact whose 32-byte Ed25519 public key is used for decryption
 	 * @param ourPrivKey64 our 64-byte Ed25519 private key (from
 	 *                     CMD_EXPORT_PRIVATE_KEY)
 	 * @return true if MAC matched and plaintext was valid

@@ -315,7 +315,7 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	/**
 	 * register a listener. Multiple listeners for the same class can be registered.
 	 *
-	 * @param <T>
+	 * @param <T>        frame type bound
 	 * @param frameClass key for list to which the listener will be added. Frames
 	 *                   assignable to the class will be passed to all listeners in
 	 *                   that list.
@@ -411,13 +411,23 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	private static final long DEFAULT_CMD_TIMEOUT = 2000L;
 	private static final long DEFAULT_MSG_TIMEOUT = 30000L;
 
-	/** Reboot the device. Fire-and-forget — no response expected. */
+	/**
+	 * Reboot the device. Fire-and-forget — no response expected.
+	 *
+	 * @throws IOException on transport error
+	 */
 	public void reboot() throws IOException {
 		sendFrame(new CmdReboot());
 	}
 
 	/**
-	 * @return true if the device currently has an active connection to the contact
+	 * Returns true if the device currently has an active connection to the contact.
+	 *
+	 * @param pubkey 32-byte public key of the contact
+	 * @return true if a connection is active
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public boolean hasConnection(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = sendFrameWithResult(new CmdHasConnection(pubkey), DEFAULT_CMD_TIMEOUT);
@@ -429,6 +439,9 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	 *
 	 * @param method {@link CmdSendSelfAdvert.AdvertMethod#FLOOD} or
 	 *               {@code ZERO_HOP}
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public void sendSelfAdvert(CmdSendSelfAdvert.AdvertMethod method)
 			throws IOException, TimeoutException, InterruptedException {
@@ -437,7 +450,19 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 			throw new CompanionErrorException(resp.toString());
 	}
 
-	/** Send a direct text message and wait for delivery confirmation. */
+	/**
+	 * Send a direct text message and wait for delivery confirmation.
+	 *
+	 * @param txtType   message text type
+	 * @param prefix6   6-byte public key prefix identifying the recipient
+	 * @param attempt   attempt counter (0-based), or {@code null} for default
+	 * @param timestamp Unix epoch seconds, or {@code null} to use the current time
+	 * @param text      message text
+	 * @return delivery confirmation push
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no delivery confirmation arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public SendConfirmedPush sendTxtMsg(MessageTextType txtType, byte[] prefix6, Integer attempt, Long timestamp,
 			String text) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = sendFrameWithResultAndResponse(
@@ -451,6 +476,16 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	/**
 	 * Send a direct text message and return {@link Sent} immediately without
 	 * waiting for delivery confirmation.
+	 *
+	 * @param txtType   message text type
+	 * @param prefix6   6-byte public key prefix identifying the recipient
+	 * @param attempt   attempt counter (0-based), or {@code null} for default
+	 * @param timestamp Unix epoch seconds, or {@code null} to use the current time
+	 * @param text      message text
+	 * @return RESP_SENT acknowledgement
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public Sent sendTxtMsgAsync(MessageTextType txtType, byte[] prefix6, Integer attempt, Long timestamp, String text)
 			throws IOException, TimeoutException, InterruptedException {
@@ -472,9 +507,9 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	 * @param timestamp Unix epoch seconds, or {@code null} to use the current time
 	 * @param text      message text
 	 * @return {@link SendConfirmedPush} delivery confirmation
-	 * @throws IOException
+	 * @throws IOException          on transport error
 	 * @throws TimeoutException     if all 3 attempts time out
-	 * @throws InterruptedException
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public SendConfirmedPush sendTxtMsgWithRetry(MessageTextType txtType, byte[] prefix6, Long timestamp, String text)
 			throws IOException, TimeoutException, InterruptedException {
@@ -495,6 +530,15 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 
 	/**
 	 * Send a text message to a group channel.
+	 *
+	 * @param txtType   message text type
+	 * @param channelId channel index in the device's channel table
+	 * @param timestamp Unix epoch seconds, or {@code null} to use the current time
+	 * @param text      message text
+	 * @return response frame (RESP_SENT or RESP_ERR)
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public ResponseFrame sendChannelTxtMessage(MessageTextType txtType, int channelId, Long timestamp, String text)
 			throws IOException, TimeoutException, InterruptedException {
@@ -513,6 +557,9 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	 * @param encodedPath encoded path bytes (null when pathLen == 0xFF)
 	 * @param dataType    16-bit application-defined data type
 	 * @param payload     binary payload
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public void sendChannelData(int channelIdx, byte pathLen, byte[] encodedPath, int dataType, byte[] payload)
 			throws IOException, TimeoutException, InterruptedException {
@@ -524,6 +571,13 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 
 	/**
 	 * Send raw data directly via a known path.
+	 *
+	 * @param pathLen encoded hop count
+	 * @param path    encoded path bytes
+	 * @param data    payload bytes
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public void sendRawData(int pathLen, byte[] path, byte[] data)
 			throws IOException, TimeoutException, InterruptedException {
@@ -532,7 +586,16 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 			throw new CompanionErrorException(resp.toString());
 	}
 
-	/** Send a binary request and wait for the binary response push. */
+	/**
+	 * Send a binary request and wait for the binary response push.
+	 *
+	 * @param pubkey32 32-byte Ed25519 public key of the target node
+	 * @param data     payload bytes to send
+	 * @return the binary response push frame from the target node
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public BinaryResponsePush sendBinaryReq(byte[] pubkey32, byte[] data)
 			throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = sendFrameWithResultAndResponse(new CmdSendBinaryReq(pubkey32, data), DEFAULT_CMD_TIMEOUT,
@@ -545,6 +608,13 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	/**
 	 * Send a binary request and return {@link Sent} immediately without waiting for
 	 * the response push.
+	 *
+	 * @param pubkey32 32-byte Ed25519 public key of the target node
+	 * @param data     payload bytes to send
+	 * @return RESP_SENT acknowledgement
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public Sent sendBinaryReqAsync(byte[] pubkey32, byte[] data)
 			throws IOException, TimeoutException, InterruptedException {
@@ -564,6 +634,9 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	 * @param pubkey32  full 32-byte public key of the room server
 	 * @param syncSince epoch-seconds of the last post the client has received; 0 to
 	 *                  skip the sync-since hint
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public void sendKeepAlive(byte[] pubkey32, long syncSince)
 			throws IOException, TimeoutException, InterruptedException {
@@ -575,6 +648,13 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 
 	/**
 	 * Send an anonymous request. Returns RESP_SENT; no async response is defined.
+	 *
+	 * @param pubkey  32-byte Ed25519 public key of the target node
+	 * @param msgData payload bytes to send
+	 * @return RESP_SENT acknowledgement
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public Sent sendAnonReq(byte[] pubkey, byte[] msgData) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = sendFrameWithResult(new CmdSendAnonReq(pubkey, msgData), DEFAULT_CMD_TIMEOUT);
@@ -583,7 +663,15 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 		return (Sent) resp;
 	}
 
-	/** Send a status request and wait for the status response push. */
+	/**
+	 * Send a status request and wait for the status response push.
+	 *
+	 * @param pubkey 32-byte Ed25519 public key of the target node
+	 * @return the status response push frame
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
 	public StatusResponsePush sendStatusReq(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = sendFrameWithResultAndResponse(new CmdSendStatusReq(pubkey), DEFAULT_CMD_TIMEOUT,
 				DEFAULT_MSG_TIMEOUT);
@@ -595,6 +683,12 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	/**
 	 * Send a status request and return {@link Sent} immediately without waiting for
 	 * the response push.
+	 *
+	 * @param pubkey 32-byte Ed25519 public key of the target node
+	 * @return RESP_SENT acknowledgement
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public Sent sendStatusReqAsync(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = sendFrameWithResult(new CmdSendStatusReq(pubkey), DEFAULT_CMD_TIMEOUT);
@@ -606,6 +700,13 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	/**
 	 * Send a telemetry request and wait for the response push. Pass {@code null}
 	 * for self-telemetry (no async response).
+	 *
+	 * @param pubkey 32-byte Ed25519 public key of the target node, or {@code null}
+	 *               for self-telemetry
+	 * @return the telemetry response push frame
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public TelemetryResponsePush sendTelemetryReq(byte[] pubkey)
 			throws IOException, TimeoutException, InterruptedException {
@@ -619,6 +720,12 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	/**
 	 * Send a telemetry request and return {@link Sent} immediately without waiting
 	 * for the response push.
+	 *
+	 * @param pubkey 32-byte Ed25519 public key of the target node
+	 * @return RESP_SENT acknowledgement
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
 	 */
 	public Sent sendTelemetryReqAsync(byte[] pubkey) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = sendFrameWithResult(new CmdSendTelemetryReq(pubkey), DEFAULT_CMD_TIMEOUT);

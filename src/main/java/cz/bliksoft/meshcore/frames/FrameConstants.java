@@ -197,10 +197,10 @@ public class FrameConstants {
 		/** reply to CMD_SEND_TXT_MSG */
 		RESP_SENT((byte) 6), // 0x06 / 6
 
-		/** a reply to CMD_SYNC_NEXT_MESSAGE (ver < 3) */
+		/** a reply to CMD_SYNC_NEXT_MESSAGE (ver &lt; 3) */
 		RESP_CONTACT_MSG_RECV((byte) 7), // 0x07 / 7
 
-		/** a reply to CMD_SYNC_NEXT_MESSAGE (ver < 3) */
+		/** a reply to CMD_SYNC_NEXT_MESSAGE (ver &lt; 3) */
 		RESP_CHANNEL_MSG_RECV((byte) 8), // 0x08 / 8
 
 		/** a reply to CMD_GET_DEVICE_TIME */
@@ -416,7 +416,7 @@ public class FrameConstants {
 
 	/**
 	 * Bitmask flags stored in
-	 * {@link cz.bliksoft.meshcore.frames.resp.Contact#getFlags()}.
+	 * the {@code flags} field of {@link cz.bliksoft.meshcore.frames.resp.Contact}.
 	 * <p>
 	 * Bit 0: favourite flag. Bits 1–3: per-contact telemetry permission bits (used
 	 * when the corresponding telemetry mode is {@code TELEM_MODE_ALLOW_FLAGS}). The

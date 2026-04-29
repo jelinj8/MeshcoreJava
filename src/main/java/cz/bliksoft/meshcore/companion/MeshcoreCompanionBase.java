@@ -64,8 +64,11 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	abstract protected void sendBinaryFrame(byte[] payload) throws IOException;
 
 	/**
-	 * frame reader Radio -> App. Reader thread only. Expects blocking read of a
+	 * frame reader Radio -&gt; App. Reader thread only. Expects blocking read of a
 	 * complete frame.
+	 *
+	 * @return raw frame bytes, or {@code null} to signal end-of-stream
+	 * @throws IOException on transport error
 	 */
 	abstract protected byte[] getBinaryFrame() throws IOException;
 
@@ -250,6 +253,8 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	 * Returns {@code true} if the companion device is connected and has completed
 	 * initialization (handshake + {@link #deviceInit}) and is ready to accept
 	 * commands.
+	 *
+	 * @return true if the device is available
 	 */
 	public boolean isAvailable() {
 		return available.get();
@@ -259,9 +264,9 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	 * Main Meshcore input point. Keep running in its own thread, do not block by
 	 * waiting for events (they will not trigger if blocked!)
 	 *
-	 * @throws IOException
-	 * @throws InterruptedException
-	 * @throws TimeoutException
+	 * @throws IOException          on transport error
+	 * @throws InterruptedException if the calling thread is interrupted
+	 * @throws TimeoutException     if device handshake does not complete in time
 	 */
 	protected void runLoop() throws IOException, TimeoutException, InterruptedException {
 		eventExecutor.execute(() -> {
@@ -327,9 +332,9 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	/**
 	 * initial protocol handshake, loop not yet running
 	 *
-	 * @throws IOException
-	 * @throws InterruptedException
-	 * @throws TimeoutException
+	 * @throws IOException          on transport error
+	 * @throws InterruptedException if the calling thread is interrupted
+	 * @throws TimeoutException     if no response from device
 	 */
 	protected void deviceHandshake() throws IOException, TimeoutException, InterruptedException {
 		refreshDeviceInfo();
@@ -340,7 +345,7 @@ public abstract class MeshcoreCompanionBase implements Closeable {
 	 * additional initialization in online mode (e.g. set time), this is the place
 	 * to initialize after connection.
 	 *
-	 * @throws IOException
+	 * @throws IOException on transport error
 	 */
 	protected void deviceInit() throws IOException {
 

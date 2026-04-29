@@ -10,12 +10,18 @@ public abstract class ResponseFrame extends Frame {
 
 	/**
 	 * Returns the companion instance that received this frame.
+	 *
+	 * @return the originating companion
 	 */
 	public MeshcoreCompanion getCompanion() {
 		return companion;
 	}
 
-	/** Raw frame bytes as received from the device. */
+	/**
+	 * Raw frame bytes as received from the device.
+	 *
+	 * @return raw frame bytes
+	 */
 	public byte[] getData() {
 		return data;
 	}
@@ -26,11 +32,18 @@ public abstract class ResponseFrame extends Frame {
 		this.receivedAt = System.currentTimeMillis();
 	}
 
-	/** Returns the frame type code that identifies this response. */
+	/**
+	 * Returns the frame type code that identifies this response.
+	 *
+	 * @return response frame type
+	 */
 	public abstract ResponseFrameType getFrameType();
 
 	/**
 	 * Returns {@code true} if this frame's type equals {@code type}.
+	 *
+	 * @param type the frame type to compare against
+	 * @return true if frame types match
 	 */
 	public boolean is(ResponseFrameType type) {
 		return getFrameType().equals(type);
@@ -59,6 +72,8 @@ public abstract class ResponseFrame extends Frame {
 	/**
 	 * Returns the {@link System#currentTimeMillis()} timestamp when this frame was
 	 * received.
+	 *
+	 * @return wall-clock millisecond timestamp
 	 */
 	public long getReceivedAt() {
 		return receivedAt;
@@ -85,6 +100,8 @@ public abstract class ResponseFrame extends Frame {
 	 * Returns the composite cache key used to pair this response with a pending
 	 * waiter (e.g. composed from the frame type and prefix6/tag). Returns
 	 * {@code null} by default; override in frames that support async matching.
+	 *
+	 * @return composite cache key, or {@code null} if this frame has no async match
 	 */
 	public String getFrameKey() {
 		String responseKey = getResponseKey();

@@ -602,9 +602,6 @@ public class MeshcoreCompanionConfig {
 	 * @return 64-byte private key
 	 * @throws UnsupportedOperationException when private key export is disabled in
 	 *                                       device firmware
-	 * @throws IOException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
 	 */
 	public byte[] getPrivateKey() {
 		if (privateKey != null) {

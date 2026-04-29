@@ -37,12 +37,21 @@ public class AutoaddConfig extends ResponseFrame {
 		return autoaddConfig;
 	}
 
-	/** Maximum hop count applied during auto-add (0–64). */
+	/**
+	 * Maximum hop count applied during auto-add (0–64).
+	 *
+	 * @return max hops value
+	 */
 	public int getAutoAddMaxHops() {
 		return autoAddMaxHops;
 	}
 
-	/** Returns {@code true} if the given {@link AutoAddConfigFlags} bit is set. */
+	/**
+	 * Returns {@code true} if the given {@link AutoAddConfigFlags} bit is set.
+	 *
+	 * @param flag flag to test
+	 * @return true if the bit is set
+	 */
 	public boolean hasFlag(AutoAddConfigFlags flag) {
 		return (autoaddConfig & flag.mask()) != 0;
 	}
