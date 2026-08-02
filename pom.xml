@@ -36,41 +36,19 @@
 		<maven.compiler.release>8</maven.compiler.release>
 	</properties>
 
-	<distributionManagement>
-		<repository>
-			<id>bliksoft-private</id>
-			<url>https://mvn.bliksoft.cz/private</url>
-		</repository>
-		<snapshotRepository>
-			<id>bliksoft-private-snapshots</id>
-			<url>https://mvn.bliksoft.cz/private-snapshots</url>
-		</snapshotRepository>
-	</distributionManagement>
-	<repositories>
-		<repository>
-			<id>bliksoft-private</id>
-			<url>https://mvn.bliksoft.cz/private</url>
-		</repository>
-		<repository>
-			<id>bliksoft-private-snapshots</id>
-			<url>https://mvn.bliksoft.cz/private-snapshots</url>
-		</repository>
-		<repository>
-			<id>bliksoft-thirdparty</id>
-			<url>https://mvn.bliksoft.cz/thirdparty</url>
-		</repository>
-	</repositories>
-
 	<dependencies>
 		<!--
 			Serial transport (SerialMeshcoreCompanion).
 			Provided scope: required only when using USB/serial; not needed for BLE-only usage.
 			https://github.com/Fazecast/jSerialComm
+			Pinned (not a range) because 2.11.3 declares a dependency on com.fazecast:android:1.7.0,
+			an artifact that was never published anywhere still reachable (not Central, not Forgejo) -
+			letting the range resolve to 2.11.3 breaks the build. 2.11.4 dropped that dependency.
 		-->
 		<dependency>
 			<groupId>com.fazecast</groupId>
 			<artifactId>jSerialComm</artifactId>
-			<version>[2.0.0,3.0.0)</version>
+			<version>2.11.4</version>
 			<scope>provided</scope>
 		</dependency>
 
