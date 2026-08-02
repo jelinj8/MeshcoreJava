@@ -90,7 +90,10 @@ public class FrameConstants {
 		CMD_SET_DEFAULT_FLOOD_SCOPE((byte) 63), // 0x3F / 63
 
 		/** v1.15+ get persisted default flood scope */
-		CMD_GET_DEFAULT_FLOOD_SCOPE((byte) 64); // 0x40 / 64
+		CMD_GET_DEFAULT_FLOOD_SCOPE((byte) 64), // 0x40 / 64
+
+		/** v13+ inject a fully pre-built raw mesh packet */
+		CMD_SEND_RAW_PACKET((byte) 65); // 0x41 / 65
 
 		private final byte code;
 

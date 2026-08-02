@@ -110,6 +110,18 @@ public class ByteBuilder {
 	}
 
 	/**
+	 * Append an unsigned 16-bit integer in little-endian byte order.
+	 *
+	 * @param value value to write (must be in range 0-0xFFFF)
+	 */
+	public void putUInt16LE(int value) {
+		if (value < 0 || value > 0xFFFF)
+			throw new IllegalArgumentException("out of range");
+		ensure(2);
+		put(new byte[] { (byte) value, (byte) (value >>> 8) });
+	}
+
+	/**
 	 * Append a signed 32-bit integer in little-endian byte order.
 	 *
 	 * @param value value to write

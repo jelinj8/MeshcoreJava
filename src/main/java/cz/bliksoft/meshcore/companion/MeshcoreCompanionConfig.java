@@ -983,8 +983,6 @@ public class MeshcoreCompanionConfig {
 		companion.refreshDeviceInfo();
 	}
 
-	// setFloodScope // TODO as it isn't final in firmware
-
 	/**
 	 * Update device other-params (telemetry modes, contact add policy, etc.). Pass
 	 * {@code null} for any parameter to keep the current device value.
@@ -1169,6 +1167,22 @@ public class MeshcoreCompanionConfig {
 	 */
 	public void setFloodScope(byte[] scope) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = companion.sendFrameWithResult(new CmdSetFloodScope(scope), defaultGetTimeout);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+	}
+
+	/**
+	 * Forces flood-routed packets to be sent completely unscoped (protocol
+	 * v12+), overriding even the persisted default scope. This is distinct from
+	 * {@link #setFloodScope(byte[]) setFloodScope(null)}, which merely clears
+	 * the override and falls back to the persisted default scope.
+	 *
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
+	public void setFloodScopeUnscoped() throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = companion.sendFrameWithResult(CmdSetFloodScope.unscoped(), defaultGetTimeout);
 		if (resp instanceof Error)
 			throw new CompanionErrorException(resp.toString());
 	}

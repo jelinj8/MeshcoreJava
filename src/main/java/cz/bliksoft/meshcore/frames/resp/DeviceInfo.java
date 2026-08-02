@@ -89,6 +89,12 @@ public class DeviceInfo extends ResponseFrame {
 	 * <li>8 → v1.10.0+</li>
 	 * <li>9 → v1.12.0+</li>
 	 * <li>10 → v1.14.0+</li>
+	 * <li>11 → v1.15.0+</li>
+	 * <li>12 → adds a second {@code CMD_SET_FLOOD_SCOPE_KEY} variant (force
+	 * unscoped sending); no new {@code RESP_CODE_DEVICE_INFO} fields</li>
+	 * <li>13 → v1.16.0+; {@code CMD_SEND_ANON_REQ} allows non-contact
+	 * recipients; adds {@code CMD_SEND_RAW_PACKET}; no new
+	 * {@code RESP_CODE_DEVICE_INFO} fields</li>
 	 * </ul>
 	 */
 	final int protocolVersion;

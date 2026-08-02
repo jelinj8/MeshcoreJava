@@ -47,5 +47,5 @@ public class Settings {
 	public static final int MAX_FRAME_SIZE = 172;
 
 	/** MeshCore companion protocol version implemented by this library. */
-	public static final int IMPLEMENTED_PROTOCOL_VERSION = 14;
+	public static final int IMPLEMENTED_PROTOCOL_VERSION = 13;
 }

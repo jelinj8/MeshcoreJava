@@ -17,6 +17,8 @@ import cz.bliksoft.meshcore.frames.CommandFrame;
 import cz.bliksoft.meshcore.frames.Frame;
 import cz.bliksoft.meshcore.frames.FrameConstants.MessageTextType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
+import cz.bliksoft.meshcore.frames.OtaConstants.OtaPayloadType;
+import cz.bliksoft.meshcore.frames.OtaConstants.OtaRouteType;
 import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.cmd.CmdFactoryReset;
 import cz.bliksoft.meshcore.frames.cmd.CmdHasConnection;
@@ -30,6 +32,7 @@ import cz.bliksoft.meshcore.frames.cmd.CmdSendControlData;
 import cz.bliksoft.meshcore.frames.cmd.CmdSendLogin;
 import cz.bliksoft.meshcore.frames.cmd.CmdSendPathDiscoveryReq;
 import cz.bliksoft.meshcore.frames.cmd.CmdSendRawData;
+import cz.bliksoft.meshcore.frames.cmd.CmdSendRawPacket;
 import cz.bliksoft.meshcore.frames.cmd.CmdSendSelfAdvert;
 import cz.bliksoft.meshcore.frames.cmd.CmdSendStatusReq;
 import cz.bliksoft.meshcore.frames.cmd.CmdSendTelemetryReq;
@@ -637,6 +640,34 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	public void sendRawData(int pathLen, byte[] path, byte[] data)
 			throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = sendFrameWithResult(new CmdSendRawData(pathLen, path, data), DEFAULT_CMD_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+	}
+
+	/**
+	 * Inject a fully pre-built raw mesh packet (protocol v13+). Low-level escape
+	 * hatch mirroring the on-air {@code Packet} wire format directly; most
+	 * callers should use the higher-level send methods instead.
+	 *
+	 * @param priority       send priority; lower values are sent first (0 =
+	 *                       highest priority)
+	 * @param routeType      packet route type
+	 * @param payloadType    packet payload type
+	 * @param transportCodes 2-element array of unsigned 16-bit transport codes;
+	 *                       required iff {@code routeType.hasTransportCodes()},
+	 *                       must be {@code null} otherwise
+	 * @param path           path hash bytes (1 byte per hop), max 64 bytes
+	 * @param payload        raw payload bytes, max 184 bytes
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
+	public void sendRawPacket(byte priority, OtaRouteType routeType, OtaPayloadType payloadType,
+			int[] transportCodes, byte[] path, byte[] payload)
+			throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResult(
+				new CmdSendRawPacket(priority, routeType, payloadType, transportCodes, path, payload),
+				DEFAULT_CMD_TIMEOUT);
 		if (resp instanceof Error)
 			throw new CompanionErrorException(resp.toString());
 	}

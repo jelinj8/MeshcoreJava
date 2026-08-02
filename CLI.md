@@ -236,6 +236,7 @@ Ranges: freq 150–2500 MHz, BW 7–500 MHz, SF 5–12, CR 5–8, timeout > 0.
 | Command | Description |
 |---------|-------------|
 | `region` | List all configured regions. |
+| `region def {name}[\|jump] [{name}[\|jump] ...]` | One-line bulk definition of a region chain. Each space-separated token creates a child of the current cursor (starting at the wildcard root) with flood allowed by default; a `\|jump` (or `,jump`) suffix repositions the cursor to an existing region (by name prefix) instead of nesting under the newly created one. Replies with the resulting region tree. |
 | `region load` | Begin bulk region load mode. Each subsequent text line is `{name}F` (allow flood) or `{name}` (deny flood). A blank line ends load and applies changes. |
 | `region save` | Persist current region map to flash. |
 | `region put {name} [{parent}]` | Add a region (defaults to wildcard parent). |

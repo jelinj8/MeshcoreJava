@@ -11,7 +11,7 @@ cd examples/MeshBot && mvn package # build the MeshBot example
 
 Target Java version is JDK 8 (`maven.compiler.release=8`). Do not use language features above Java 8.
 
-There are no automated tests. Correctness is verified by cross-checking against the reference C++ firmware source at https://github.com/meshcore-dev/MeshCore/blob/main/examples/companion_radio/MyMesh.cpp (firmware v1.15.0, `FIRMWARE_VER_CODE=11`).
+There are no automated tests. Correctness is verified by cross-checking against the reference C++ firmware source at https://github.com/meshcore-dev/MeshCore/blob/main/examples/companion_radio/MyMesh.cpp (firmware v1.16.0, `FIRMWARE_VER_CODE=13`).
 
 ## Architecture
 
