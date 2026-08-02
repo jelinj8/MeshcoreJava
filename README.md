@@ -5,7 +5,7 @@ Initial version was written by me (reverse-engineering of the C++ firmware sourc
 
 Everything should be compatible with JDK1.8. It contradicts the "think embedded" suggestion at Meshcore's GitHub as it is a higher level language and the main idea is to keep it maintainable and in sync with the firmware (that is why there is the Frame type hierarchy).
 
-Currently the only dependency is com.fazecast jSerialComm for USB virtual COM and Log4J. When BLE implementation is added, I plan to keep the serial interface and the BLE implementation as separate dependencies (to add just what is needed, there will be probably also a separate BLE version for Windows and Linux as there is no multiplatform Java BLE library).
+The serial (com.fazecast jSerialComm) and BLE (cz.bliksoft.java:common-java-utils-ble) transports are kept as separate `provided`-scope dependencies, so you add only what you need. Plus Log4J.
 That should enable this to be used even in Android apps (to finally make an open-source companion app). I'm not an Android developer, I'm going to make a PC (JavaFX based) companion eventually + use this as an API to integrate the companion in a server APP.
 
 BLE is implemented via `BleMeshcoreCompanion`, which tunnels the same byte-stream protocol over the Nordic UART Service (NUS). Both transports are `provided`-scope dependencies, so you add only what you need.
@@ -26,32 +26,17 @@ Both transport dependencies are `provided` — add only the one(s) you use to yo
 **BLE:**
 ```xml
 <dependency>
-    <groupId>org.simplejavable</groupId>
-    <artifactId>simplejavable</artifactId>
-    <version>0.12.1</version>
+    <groupId>cz.bliksoft.java</groupId>
+    <artifactId>common-java-utils-ble</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
 </dependency>
 ```
 
-`simplejavable` is not on Maven Central. Download `simplejavable-v0.12.1.jar` from the [SimpleBLE GitHub releases](https://github.com/simpleble/simpleble/releases/tag/v0.12.1) and install it to your local Maven repo once:
-
-```bash
-mvn install:install-file -Dfile=simplejavable-v0.12.1.jar \
-    -DgroupId=org.simplejavable -DartifactId=simplejavable \
-    -Dversion=0.12.1 -Dpackaging=jar
-```
-
-You also need the platform native library on `java.library.path` at runtime (from the same release page):
-
-| Platform | File |
-|----------|------|
-| Linux x64 | `libsimplejavable.so` (from `libsimpleble_linux-x64.zip`) |
-| Windows x64 | `libsimplejavable.dll` (from `libsimpleble_windows-x64.zip`) |
-| macOS | `libsimplejavable.dylib` |
-
-Example — run with native lib next to the JAR:
-```bash
-java -Djava.library.path=. -jar myapp.jar
-```
+[`common-java-utils-ble`](https://github.com/jelinj8/Java-BSToolbox-BLE) (BSToolbox-BLE) is a
+standalone cross-platform BLE library. Unlike the previous `simplejavable`/SimpleBLE dependency,
+it doesn't run BLE in-process via JNI — it drives a bundled Rust sidecar process instead, so a
+native-side BLE fault can't crash the JVM, and there's no separate native library to install or
+put on `java.library.path`; the sidecar binaries for Windows/Linux are bundled in the jar.
 
 ## BLE usage
 
@@ -69,7 +54,11 @@ companion.awaitAvailable(10_000);
 companion.close();
 ```
 
-`BleMeshcoreCompanion` expects the radio firmware to expose the [Nordic UART Service](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/libraries/bluetooth_services/services/nus.html) (NUS). The UUIDs used are the standard ones (`6E400001...` / TX `6E400002...` / RX `6E400003...`); verify these against your firmware build before first use.
+`BleMeshcoreCompanion` expects the radio firmware to expose the [Nordic UART Service](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/libraries/bluetooth_services/services/nus.html) (NUS). The UUIDs used are the standard ones (`6E400001...` / TX `6E400002...` / RX `6E400003...`) — confirmed against the [firmware's own BLE companion protocol docs](https://github.com/meshcore-dev/MeshCore/wiki/Companion-Radio-Protocol).
+
+**Pairing:** companion_radio's BLE GATT is configured with MITM protection and mandatory bonding on both ESP32 and NRF52 builds, using a static PIN (`123456` by default). Pair the device via your OS's Bluetooth settings *before* connecting — this library (like the SimpleBLE-based implementation before it) has no way to drive the OS pairing flow itself. Confirmed against real hardware: connect and service discovery succeed even unpaired, but the first write to the TX characteristic fails with `HRESULT(0x80650005)` / "attribute requires authentication before reading or writing" (Windows) if the device isn't paired — that error, not a silent hang, is what you'll see.
+
+**Windows-specific gotcha, confirmed against real hardware:** pairing two MeshCore devices to the same Windows PC at the same time reliably breaks BLE for *both* of them (`discover_services`/`subscribe` hang indefinitely — see `common-java-utils-ble`'s retry-on-hang workaround for the related, but distinct, single-device post-pairing IRK-resolution hang). Removing all but one paired MeshCore device restores normal operation immediately. Root cause not confirmed (suspected: Windows' bond/GATT-handle cache getting confused by two devices with identical service/characteristic UUIDs), but the workaround is simple — keep only one MeshCore device paired on Windows at a time.
 
 All communication is logged (Log4J2 to cz.bliksoft.meshcore.companion.MeshcoreCompanion.DEV FINE).
 
