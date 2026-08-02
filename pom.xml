@@ -62,12 +62,12 @@
 			      -DgroupId=org.simplejavable -DartifactId=simplejavable \
 			      -Dversion=0.12.1 -Dpackaging=jar
 		-->
-		<dependency>
+		<!--<dependency>
 			<groupId>org.simplejavable</groupId>
 			<artifactId>simplejavable</artifactId>
 			<version>0.12.1</version>
 			<scope>provided</scope>
-		</dependency>
+		</dependency>-->
 
 	</dependencies>
 
