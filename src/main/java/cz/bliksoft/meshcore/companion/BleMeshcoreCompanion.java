@@ -3,7 +3,9 @@ package cz.bliksoft.meshcore.companion;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -258,8 +260,19 @@ public class BleMeshcoreCompanion extends MeshcoreCompanion {
 	 */
 	public static List<String> scanForNusDevices(int timeoutMs) throws IOException {
 		try (BleAdapter adapter = new BleAdapter()) {
+			// A device readvertises repeatedly during the scan window, so the same address shows
+			// up in many events - keyed map dedupes by address, upgrading a null/blank name to a
+			// real one if a later advertisement carries it, without ever downgrading back.
+			Map<String, String> devices = new LinkedHashMap<>();
+			adapter.scan(new ScanFilter(), timeoutMs, (address, name, rssi) -> {
+				if ((name != null && !name.trim().isEmpty()) || !devices.containsKey(address)) {
+					devices.put(address, name);
+				}
+			});
 			List<String> result = new ArrayList<>();
-			adapter.scan(new ScanFilter(), timeoutMs, (address, name, rssi) -> result.add(address + " (" + name + ")"));
+			for (Map.Entry<String, String> e : devices.entrySet()) {
+				result.add(e.getKey() + " (" + (e.getValue() != null ? e.getValue() : "") + ")");
+			}
 			return result;
 		} catch (BleException e) {
 			throw new IOException("BLE scan failed", e);
