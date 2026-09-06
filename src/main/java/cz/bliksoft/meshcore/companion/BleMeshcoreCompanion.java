@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,38 +19,48 @@ import cz.bliksoft.javautils.ble.ScanFilter;
 
 /**
  * BLE transport for MeshcoreCompanion using the Nordic UART Service (NUS). Uses
- * cz.bliksoft.java:common-java-utils-ble (BSToolbox-BLE) for cross-platform BLE support.
+ * cz.bliksoft.java:common-java-utils-ble (BSToolbox-BLE) for cross-platform BLE
+ * support.
  *
- * BSToolbox-BLE drives BLE through a bundled Rust sidecar process rather than an in-process
- * native binding, so a native-side BLE fault (which the previous SimpleBLE/simplejavable-based
- * implementation could hit on connect) surfaces as an IOException here instead of crashing the
- * JVM. Every reconnect attempt starts a fresh sidecar process, so a crashed sidecar is simply
- * retried like any other disconnect.
+ * BSToolbox-BLE drives BLE through a bundled Rust sidecar process rather than
+ * an in-process native binding, so a native-side BLE fault (which the previous
+ * SimpleBLE/simplejavable-based implementation could hit on connect) surfaces
+ * as an IOException here instead of crashing the JVM. Every reconnect attempt
+ * starts a fresh sidecar process, so a crashed sidecar is simply retried like
+ * any other disconnect.
  *
- * NUS UUIDs are exposed as public constants so callers can override if the firmware uses a
- * different BLE profile. Confirmed against the firmware's own BLE companion protocol docs
- * (meshcore-dev/MeshCore wiki, "Companion Radio Protocol" / BLE section): companion_radio does
- * use the standard NUS UUIDs below, with matching read/write directions to what's implemented
- * here (UUIDs are named from the phone's perspective in this class, from the firmware's
- * perspective in the firmware docs — same characteristics, opposite-facing names).
+ * NUS UUIDs are exposed as public constants so callers can override if the
+ * firmware uses a different BLE profile. Confirmed against the firmware's own
+ * BLE companion protocol docs (meshcore-dev/MeshCore wiki, "Companion Radio
+ * Protocol" / BLE section): companion_radio does use the standard NUS UUIDs
+ * below, with matching read/write directions to what's implemented here (UUIDs
+ * are named from the phone's perspective in this class, from the firmware's
+ * perspective in the firmware docs — same characteristics, opposite-facing
+ * names).
  *
- * That same source confirms the firmware <b>requires OS-level pairing/bonding with MITM
- * protection</b> (static PIN, typically {@code 123456}) before the connection can be used — this
- * isn't a library limitation, it's how the firmware's GATT security is configured on both ESP32
- * and NRF52 builds. Pair the device via the OS's own Bluetooth settings first; neither this
- * library nor the underlying btleplug sidecar can drive that pairing flow itself.
+ * That same source confirms the firmware <b>requires OS-level pairing/bonding
+ * with MITM protection</b> (static PIN, typically {@code 123456}) before the
+ * connection can be used — this isn't a library limitation, it's how the
+ * firmware's GATT security is configured on both ESP32 and NRF52 builds. Pair
+ * the device via the OS's own Bluetooth settings first; neither this library
+ * nor the underlying btleplug sidecar can drive that pairing flow itself.
  *
- * Unlike the USB/serial transport, BLE frames carry <b>no {@code '&lt;'}/{@code '&gt;'} + u16le
- * length header</b> — per the firmware's own docs ("for BLE, a frame is simply a single
- * characteristic value; the BLE link layer already does all the integrity checks"), each GATT
- * write/notification value *is* one complete frame. The original SimpleBLE-based implementation
- * (and this class, until verified against a live device) wrongly reused the serial framing here;
- * {@link #sendBinaryFrame} and {@link #getBinaryFrame} do not add or expect that header.
+ * Unlike the USB/serial transport, BLE frames carry <b>no
+ * {@code '&lt;'}/{@code '&gt;'} + u16le length header</b> — per the firmware's
+ * own docs ("for BLE, a frame is simply a single characteristic value; the BLE
+ * link layer already does all the integrity checks"), each GATT
+ * write/notification value *is* one complete frame. The original
+ * SimpleBLE-based implementation (and this class, until verified against a live
+ * device) wrongly reused the serial framing here; {@link #sendBinaryFrame} and
+ * {@link #getBinaryFrame} do not add or expect that header.
  */
 public class BleMeshcoreCompanion extends MeshcoreCompanion {
 	private static final Logger log = Logger.getLogger(BleMeshcoreCompanion.class.getName());
 
-	/** Nordic UART Service (NUS) — base service UUID; standard serial-over-BLE profile. */
+	/**
+	 * Nordic UART Service (NUS) — base service UUID; standard serial-over-BLE
+	 * profile.
+	 */
 	public static final String NUS_SERVICE = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
 	/** NUS TX characteristic — phone writes to device (Write Without Response). */
 	public static final String NUS_TX = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E";
@@ -68,15 +77,17 @@ public class BleMeshcoreCompanion extends MeshcoreCompanion {
 	private volatile BleAdapter adapter;
 	private volatile BlePeripheral peripheral;
 
-	// Each queued entry is already one complete frame - see the class-level note on BLE framing.
+	// Each queued entry is already one complete frame - see the class-level note on
+	// BLE framing.
 	private final LinkedBlockingQueue<byte[]> rxChunks = new LinkedBlockingQueue<>();
 
 	/**
-	 * Creates a companion that connects to a MeshCore radio over BLE and immediately starts the
-	 * reader loop.
+	 * Creates a companion that connects to a MeshCore radio over BLE and
+	 * immediately starts the reader loop.
 	 *
 	 * @param name          companion name (for logging/identity)
-	 * @param deviceAddress BLE MAC address of the MeshCore radio (e.g. "AA:BB:CC:DD:EE:FF")
+	 * @param deviceAddress BLE MAC address of the MeshCore radio (e.g.
+	 *                      "AA:BB:CC:DD:EE:FF")
 	 */
 	public BleMeshcoreCompanion(String name, String deviceAddress) {
 		super(name);
@@ -102,9 +113,12 @@ public class BleMeshcoreCompanion extends MeshcoreCompanion {
 	protected synchronized void sendBinaryFrame(byte[] payload) throws IOException {
 		checkConnection();
 		BlePeripheral p = peripheral;
-		// One GATT write == one complete frame (no serial-style header) - see class Javadoc. The
-		// TX characteristic only declares WRITE (Write Request), not WRITE_WITHOUT_RESPONSE -
-		// verified against a live device - so a plain "write without response" here would be
+		// One GATT write == one complete frame (no serial-style header) - see class
+		// Javadoc. The
+		// TX characteristic only declares WRITE (Write Request), not
+		// WRITE_WITHOUT_RESPONSE -
+		// verified against a live device - so a plain "write without response" here
+		// would be
 		// silently dropped by the BLE stack instead of erroring.
 		try {
 			p.writeCharacteristic(NUS_SERVICE, NUS_TX, payload, true);
@@ -165,8 +179,10 @@ public class BleMeshcoreCompanion extends MeshcoreCompanion {
 	private void connectBle() throws IOException {
 		rxChunks.clear();
 
-		// Every reconnect attempt gets a fresh sidecar process, so a crashed sidecar from a
-		// previous attempt is simply retried like any other disconnect — no restart bookkeeping
+		// Every reconnect attempt gets a fresh sidecar process, so a crashed sidecar
+		// from a
+		// previous attempt is simply retried like any other disconnect — no restart
+		// bookkeeping
 		// needed here.
 		BleAdapter newAdapter;
 		try {
@@ -176,17 +192,22 @@ public class BleMeshcoreCompanion extends MeshcoreCompanion {
 		}
 		this.adapter = newAdapter;
 
-		AtomicBoolean found = new AtomicBoolean(false);
+		// A scan is required here to seed the sidecar's peripheral cache - on Windows/WinRT,
+		// btleplug only learns about a peripheral (even an already-bonded one) via an active
+		// BluetoothLEAdvertisementWatcher scan; connect() against an address it has never scanned
+		// fails immediately with "unknown peripheral address". But whether *this* call's live
+		// device_found callback happens to report our specific address is NOT used to gate
+		// connect() below: on Linux/BlueZ a bonded device doesn't necessarily re-fire a discovery
+		// event within the scan window even though the sidecar's own cache (populated independently
+		// of live events, e.g. from BlueZ's already-bonded device list) can resolve and connect to
+		// it fine - so treating a missed callback as fatal here produced false "not found" failures.
+		// connect() itself gives the real error if the device truly can't be reached.
 		try {
 			newAdapter.scan(new ScanFilter(), SCAN_TIMEOUT_MS, (address, name, rssi) -> {
-				if (deviceAddress.equalsIgnoreCase(address))
-					found.set(true);
 			});
 		} catch (BleException e) {
 			throw new IOException("BLE scan failed", e);
 		}
-		if (!found.get())
-			throw new IOException("BLE device not found during scan: " + deviceAddress);
 
 		BlePeripheral p = newAdapter.getPeripheral(deviceAddress);
 		p.setDisconnectListener(reason -> log.info(String.format("BLE %s reported disconnect from %s: %s",
@@ -251,8 +272,9 @@ public class BleMeshcoreCompanion extends MeshcoreCompanion {
 	// ─── Utility: scanning ────────────────────────────────────────────────────
 
 	/**
-	 * Scan for BLE devices and return a list of "address (name)" strings for all visible
-	 * peripherals. Use this to discover the address to pass to the constructor.
+	 * Scan for BLE devices and return a list of "address (name)" strings for all
+	 * visible peripherals. Use this to discover the address to pass to the
+	 * constructor.
 	 *
 	 * @param timeoutMs scan duration in milliseconds
 	 * @return list of "address (name)" strings for each discovered peripheral
@@ -260,8 +282,10 @@ public class BleMeshcoreCompanion extends MeshcoreCompanion {
 	 */
 	public static List<String> scanForNusDevices(int timeoutMs) throws IOException {
 		try (BleAdapter adapter = new BleAdapter()) {
-			// A device readvertises repeatedly during the scan window, so the same address shows
-			// up in many events - keyed map dedupes by address, upgrading a null/blank name to a
+			// A device readvertises repeatedly during the scan window, so the same address
+			// shows
+			// up in many events - keyed map dedupes by address, upgrading a null/blank name
+			// to a
 			// real one if a later advertisement carries it, without ever downgrading back.
 			Map<String, String> devices = new LinkedHashMap<>();
 			adapter.scan(new ScanFilter(), timeoutMs, (address, name, rssi) -> {
