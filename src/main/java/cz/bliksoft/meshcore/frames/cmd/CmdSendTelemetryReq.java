@@ -1,9 +1,13 @@
 package cz.bliksoft.meshcore.frames.cmd;
 
+import java.util.Arrays;
+
 import cz.bliksoft.meshcore.frames.FrameConstants.CommandFrameType;
 import cz.bliksoft.meshcore.frames.FrameConstants.ResponseFrameType;
+import cz.bliksoft.meshcore.frames.ResponseFrame;
 import cz.bliksoft.meshcore.frames.group.CommandsWithSentResponse;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
+import cz.bliksoft.meshcore.utils.MeshcoreUtils;
 
 /**
  * Command frame that requests telemetry data from a remote node or from the
@@ -25,13 +29,18 @@ public class CmdSendTelemetryReq extends CommandsWithSentResponse {
 
 	@Override
 	public CommandFrameType getFrameType() {
-		return CommandFrameType.CMD_SEND_PATH_DISCOVERY_REQ;
+		return CommandFrameType.CMD_SEND_TELEMETRY_REQ;
 	}
 
 	@Override
 	public byte[] getBytes() {
 		ByteBuilder bb = new ByteBuilder();
 		bb.put(getTypeCode());
+		// 3 reserved bytes: firmware expects the pubkey at offset 4 (or, for
+		// self-telemetry with no pubkey, a total frame length of exactly 4).
+		bb.put((byte) 0);
+		bb.put((byte) 0);
+		bb.put((byte) 0);
 
 		if (pubkey != null)
 			bb.put(pubkey);
@@ -56,6 +65,20 @@ public class CmdSendTelemetryReq extends CommandsWithSentResponse {
 			return ResponseFrameType.PUSH_TELEMETRY_RESPONSE;
 		else
 			return null;
+	}
+
+	/**
+	 * The firmware's PUSH_TELEMETRY_RESPONSE carries only a 6-byte pubkey prefix
+	 * (see
+	 * {@link cz.bliksoft.meshcore.frames.push.TelemetryResponsePush#getResponseKey()}),
+	 * not the request tag from the {@link cz.bliksoft.meshcore.frames.resp.Sent}
+	 * acknowledgement, so the result key must be keyed off the target pubkey
+	 * instead of the default tag-based key.
+	 */
+	@Override
+	public String getResultKey(ResponseFrame callResult) {
+		this.callResult = (cz.bliksoft.meshcore.frames.resp.Sent) callResult;
+		return MeshcoreUtils.hex(Arrays.copyOf(pubkey, 6));
 	}
 
 }

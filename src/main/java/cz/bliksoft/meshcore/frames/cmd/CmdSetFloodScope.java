@@ -16,8 +16,8 @@ public class CmdSetFloodScope extends CommandFrame {
 
 	/**
 	 * @param scope 16-byte transport key restricting flood scope, or {@code null}
-	 *              to clear the override (revert to the persisted default scope,
-	 *              if any)
+	 *              to clear the override (revert to the persisted default scope, if
+	 *              any)
 	 */
 	public CmdSetFloodScope(byte[] scope) {
 		this.scope = scope;
@@ -30,8 +30,8 @@ public class CmdSetFloodScope extends CommandFrame {
 	}
 
 	/**
-	 * Forces flood-routed packets to be sent completely unscoped (protocol
-	 * v12+), overriding even the persisted default scope. This is distinct from
+	 * Forces flood-routed packets to be sent completely unscoped (protocol v12+),
+	 * overriding even the persisted default scope. This is distinct from
 	 * {@code new CmdSetFloodScope(null)}, which merely clears the override and
 	 * falls back to the persisted default scope.
 	 */

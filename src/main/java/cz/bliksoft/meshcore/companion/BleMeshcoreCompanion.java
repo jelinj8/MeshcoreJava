@@ -192,16 +192,19 @@ public class BleMeshcoreCompanion extends MeshcoreCompanion {
 		}
 		this.adapter = newAdapter;
 
-		// A scan is required here to seed the sidecar's peripheral cache - on Windows/WinRT,
-		// btleplug only learns about a peripheral (even an already-bonded one) via an active
-		// BluetoothLEAdvertisementWatcher scan; connect() against an address it has never scanned
-		// fails immediately with "unknown peripheral address". But whether *this* call's live
-		// device_found callback happens to report our specific address is NOT used to gate
-		// connect() below: on Linux/BlueZ a bonded device doesn't necessarily re-fire a discovery
-		// event within the scan window even though the sidecar's own cache (populated independently
-		// of live events, e.g. from BlueZ's already-bonded device list) can resolve and connect to
-		// it fine - so treating a missed callback as fatal here produced false "not found" failures.
-		// connect() itself gives the real error if the device truly can't be reached.
+		// A scan is required before connect() - some BSToolbox-BLE backends only learn
+		// about a
+		// peripheral (even an already-bonded one) through an active scan, and reject
+		// connect()
+		// against an address they've never scanned. The scan's own device_found
+		// callback isn't
+		// used to gate connect() below, though: a bonded device doesn't reliably
+		// re-announce
+		// itself within the scan window on every backend, so a missed callback here
+		// isn't
+		// reliable evidence the device is unreachable - connect() itself reports the
+		// real error
+		// if it truly can't connect.
 		try {
 			newAdapter.scan(new ScanFilter(), SCAN_TIMEOUT_MS, (address, name, rssi) -> {
 			});

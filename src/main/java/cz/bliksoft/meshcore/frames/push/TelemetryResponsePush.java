@@ -54,8 +54,10 @@ public class TelemetryResponsePush extends ResponseFrame {
 		br.skip();
 		this.reserved = br.readByte();
 		this.prefix6 = br.readBytes(6);
-		this.telemetryLen = br.readUnsignedByte();
-		this.frameData = br.readBytes(telemetryLen);
+		// NOTE: the wire frame has no explicit length byte here — firmware writes
+		// the raw telemetry payload straight after prefix6 until the frame ends.
+		this.frameData = br.readBytes();
+		this.telemetryLen = frameData.length;
 	}
 
 	@Override

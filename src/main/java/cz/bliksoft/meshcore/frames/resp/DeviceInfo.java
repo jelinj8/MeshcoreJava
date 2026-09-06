@@ -92,9 +92,11 @@ public class DeviceInfo extends ResponseFrame {
 	 * <li>11 → v1.15.0+</li>
 	 * <li>12 → adds a second {@code CMD_SET_FLOOD_SCOPE_KEY} variant (force
 	 * unscoped sending); no new {@code RESP_CODE_DEVICE_INFO} fields</li>
-	 * <li>13 → v1.16.0+; {@code CMD_SEND_ANON_REQ} allows non-contact
-	 * recipients; adds {@code CMD_SEND_RAW_PACKET}; no new
-	 * {@code RESP_CODE_DEVICE_INFO} fields</li>
+	 * <li>13 → v1.16.0+; {@code CMD_SEND_ANON_REQ} allows non-contact recipients;
+	 * adds {@code CMD_SEND_RAW_PACKET}; no new {@code RESP_CODE_DEVICE_INFO}
+	 * fields. Confirmed unchanged through v1.17.1 - the v1.17.0→v1.17.1 firmware
+	 * diff only touches a FEM radio gain prefs bugfix, not the companion
+	 * protocol.</li>
 	 * </ul>
 	 */
 	final int protocolVersion;

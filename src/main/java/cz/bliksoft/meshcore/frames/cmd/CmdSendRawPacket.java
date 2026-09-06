@@ -7,9 +7,9 @@ import cz.bliksoft.meshcore.frames.OtaConstants.OtaRouteType;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
 /**
- * Command frame that injects a fully pre-built raw mesh packet (protocol
- * v13+). This is a low-level escape hatch mirroring the on-air {@code Packet}
- * wire format directly; most callers should use the higher-level send methods
+ * Command frame that injects a fully pre-built raw mesh packet (protocol v13+).
+ * This is a low-level escape hatch mirroring the on-air {@code Packet} wire
+ * format directly; most callers should use the higher-level send methods
  * instead.
  */
 public class CmdSendRawPacket extends CommandFrame {
@@ -28,8 +28,8 @@ public class CmdSendRawPacket extends CommandFrame {
 	final byte[] payload;
 
 	/**
-	 * @param priority       send priority; lower values are sent first (0 =
-	 *                       highest priority)
+	 * @param priority       send priority; lower values are sent first (0 = highest
+	 *                       priority)
 	 * @param routeType      packet route type
 	 * @param payloadType    packet payload type
 	 * @param transportCodes 2-element array of unsigned 16-bit transport codes;

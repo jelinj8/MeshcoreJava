@@ -1172,10 +1172,10 @@ public class MeshcoreCompanionConfig {
 	}
 
 	/**
-	 * Forces flood-routed packets to be sent completely unscoped (protocol
-	 * v12+), overriding even the persisted default scope. This is distinct from
-	 * {@link #setFloodScope(byte[]) setFloodScope(null)}, which merely clears
-	 * the override and falls back to the persisted default scope.
+	 * Forces flood-routed packets to be sent completely unscoped (protocol v12+),
+	 * overriding even the persisted default scope. This is distinct from
+	 * {@link #setFloodScope(byte[]) setFloodScope(null)}, which merely clears the
+	 * override and falls back to the persisted default scope.
 	 *
 	 * @throws IOException          on transport error
 	 * @throws TimeoutException     if no response arrives in time

@@ -6,8 +6,8 @@ import cz.bliksoft.meshcore.frames.group.CommandsWithSentResponse;
 import cz.bliksoft.meshcore.utils.ByteBuilder;
 
 /**
- * Command frame that sends an anonymous message to a node identified by
- * public key. Expects a sent acknowledgement; no push response is tracked for
+ * Command frame that sends an anonymous message to a node identified by public
+ * key. Expects a sent acknowledgement; no push response is tracked for
  * anonymous sends.
  *
  * <p>
@@ -56,11 +56,16 @@ public class CmdSendAnonReq extends CommandsWithSentResponse {
 	}
 
 	/**
-	 * can't expect response when sending anonymously? FIXME
+	 * Firmware's {@code CMD_SEND_ANON_REQ} handler shares the same
+	 * {@code pending_req}/tag matching as {@code CMD_SEND_BINARY_REQ} and replies
+	 * with an identically-shaped {@code PUSH_BINARY_RESPONSE} (see
+	 * {@code companion_radio/MyMesh.cpp}, the {@code onContactResponse}
+	 * {@code tag == pending_req} branch), so the same
+	 * {@link cz.bliksoft.meshcore.frames.push.BinaryResponsePush} — and its default
+	 * tag-based result key — applies here too.
 	 */
 	@Override
 	public ResponseFrameType getExpectedResponseFrameType() {
-		return null;
-//		return ResponseFrameType.PUSH_SEND_CONFIRMED;
+		return ResponseFrameType.PUSH_BINARY_RESPONSE;
 	}
 }

@@ -646,11 +646,11 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 
 	/**
 	 * Inject a fully pre-built raw mesh packet (protocol v13+). Low-level escape
-	 * hatch mirroring the on-air {@code Packet} wire format directly; most
-	 * callers should use the higher-level send methods instead.
+	 * hatch mirroring the on-air {@code Packet} wire format directly; most callers
+	 * should use the higher-level send methods instead.
 	 *
-	 * @param priority       send priority; lower values are sent first (0 =
-	 *                       highest priority)
+	 * @param priority       send priority; lower values are sent first (0 = highest
+	 *                       priority)
 	 * @param routeType      packet route type
 	 * @param payloadType    packet payload type
 	 * @param transportCodes 2-element array of unsigned 16-bit transport codes;
@@ -662,9 +662,8 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 	 * @throws TimeoutException     if no response arrives in time
 	 * @throws InterruptedException if the calling thread is interrupted
 	 */
-	public void sendRawPacket(byte priority, OtaRouteType routeType, OtaPayloadType payloadType,
-			int[] transportCodes, byte[] path, byte[] payload)
-			throws IOException, TimeoutException, InterruptedException {
+	public void sendRawPacket(byte priority, OtaRouteType routeType, OtaPayloadType payloadType, int[] transportCodes,
+			byte[] path, byte[] payload) throws IOException, TimeoutException, InterruptedException {
 		ResponseFrame resp = sendFrameWithResult(
 				new CmdSendRawPacket(priority, routeType, payloadType, transportCodes, path, payload),
 				DEFAULT_CMD_TIMEOUT);
@@ -747,6 +746,30 @@ public abstract class MeshcoreCompanion extends MeshcoreCompanionBase {
 		if (resp instanceof Error)
 			throw new CompanionErrorException(resp.toString());
 		return (Sent) resp;
+	}
+
+	/**
+	 * Send an anonymous request and wait for the binary response push. Unlike
+	 * {@link #sendAnonReq(byte[], byte[])}, this blocks for the node's reply —
+	 * useful for the no-login {@code ANON_REQ_TYPE_REGIONS}/{@code _OWNER}/
+	 * {@code _BASIC} queries a repeater answers without requiring the sender to be
+	 * logged in (unlike the ACL-gated {@link #sendBinaryReq(byte[], byte[])}
+	 * requests).
+	 *
+	 * @param pubkey  32-byte Ed25519 public key of the target node
+	 * @param msgData payload bytes to send (request-type byte + reply-path info)
+	 * @return the binary response push frame from the target node
+	 * @throws IOException          on transport error
+	 * @throws TimeoutException     if no response arrives in time
+	 * @throws InterruptedException if the calling thread is interrupted
+	 */
+	public BinaryResponsePush sendAnonReqAndWait(byte[] pubkey, byte[] msgData)
+			throws IOException, TimeoutException, InterruptedException {
+		ResponseFrame resp = sendFrameWithResultAndResponse(new CmdSendAnonReq(pubkey, msgData), DEFAULT_CMD_TIMEOUT,
+				DEFAULT_MSG_TIMEOUT);
+		if (resp instanceof Error)
+			throw new CompanionErrorException(resp.toString());
+		return (BinaryResponsePush) resp;
 	}
 
 	/**
